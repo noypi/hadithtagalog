@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "hadiths",
+    "slug": "hadiths",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "name": "hadiths"
+}
