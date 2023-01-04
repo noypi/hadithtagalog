@@ -34,10 +34,13 @@ export const HomeScreen = () => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [searchWords, setSearchWords] = React.useState([]);
     const onChangeSearch = query => {
+        console.debug("+- onChangeSearch() =>", {query});
         setSearchQuery(query)
         setSearchWords(query.split(" ").filter(word => word.length > 0));
-        if (searchResults.lengh > 0) {
-            setHadiths(searchResults.map(result => {
+
+        console.debug("searchResults length =>", searchResults.length);
+        if (searchResults.length > 0) {
+            const filteredResults = searchResults.filter(result => {
                 for(let i=0; i<searchWords.length; i++) {
                     const word = searchWords[i];
                     let n = result.content.search(new RegExp(`${word}`, 'i'));
@@ -46,7 +49,8 @@ export const HomeScreen = () => {
                     }
                 }
                 return false;
-            }));
+            });
+            setHadiths(filteredResults);
         }
     }
 
