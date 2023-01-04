@@ -28,6 +28,7 @@ const BookChips = ({hadithBooks}) => (
 )
 
 export const HomeScreen = () => {
+    const [searchResults, setSearchResults] = React.useState([]);
     const [hadiths, setHadiths] = React.useState([]);
     const [showSectionModal, setShowSectionModal] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState('');
@@ -35,6 +36,18 @@ export const HomeScreen = () => {
     const onChangeSearch = query => {
         setSearchQuery(query)
         setSearchWords(query.split(" ").filter(word => word.length > 0));
+        if (searchResults.lengh > 0) {
+            setHadiths(searchResults.map(result => {
+                for(let i=0; i<searchWords.length; i++) {
+                    const word = searchWords[i];
+                    let n = result.content.search(new RegExp(`${word}`, 'i'));
+                    if (0 <= n) {
+                        return true;
+                    }
+                }
+                return false;
+            }));
+        }
     }
 
     const onSearch = async () => {
@@ -55,6 +68,7 @@ export const HomeScreen = () => {
             console.debug("results.length=>", results.length);
         })
         setHadiths(results);
+        setSearchResults(results);
         console.debug("then results.length=>", results.length);
     }
 
@@ -83,7 +97,7 @@ export const HomeScreen = () => {
     }
 
     const onSectionsSelected = async (selected) => {
-        console.debug("+-onSectionsSelected() =>", selected);
+        //console.debug("+-onSectionsSelected() =>", selected);
         setShowSectionModal(false);
 
         let results: Array<any> = [];
@@ -104,6 +118,7 @@ export const HomeScreen = () => {
         }
         //console.log(Object.keys(results), "done");
         setHadiths(results);
+        setSearchResults(results);
     }
 
     return (

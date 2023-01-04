@@ -13,7 +13,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     };
 
     async function getRange(book, from, limit, onResult) {
-        console.debug("+- getRange() =>", {book, from, limit});
+        //console.debug("+- getRange() =>", {book, from, limit});
         const query = `WITH RECURSIVE
                 cnt(x) AS (
                 SELECT ?
@@ -21,10 +21,10 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
                 SELECT x+1 FROM cnt
                     LIMIT ?
                 )
-                SELECT * from hadiths_index WHERE id IN (SELECT PRINTF("%s:%d", "bukhari", x) FROM cnt);`;
+                SELECT * from hadiths_index WHERE id IN (SELECT PRINTF("%s:%d", ?, x) FROM cnt);`;
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
-                tx.executeSql(query, [from, limit], 
+                tx.executeSql(query, [from, limit, book], 
                     (tx, results) => {
                         for(let i=0; i<results.rows.length; i++) {
                             let item = results.rows.item(i);
