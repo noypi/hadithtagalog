@@ -9,7 +9,7 @@ import {HadithCard, SectionsModal} from './components';
 import { SECTION_FIRST, SECTION_LAST } from '../data/sections';
 
 let dbfil;
-openHadithsDb('hadiths.tagalog').then(db => dbfil = db);
+openHadithsDb('hadiths.db').then(db => dbfil = db);
 
 const BookChips = ({hadithBooks}) => (
     <List.Section>
@@ -56,7 +56,7 @@ export const HomeScreen = () => {
 
     const onSearch = async () => {
         let results: Array<any> = [];
-        let matchId = searchWords.filter(w => Number.isInteger(parseInt(w))).join(" ");
+        let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
         if (matchContent.length == 0) {
             if (matchId.length == 0) {
@@ -64,7 +64,7 @@ export const HomeScreen = () => {
             }
         }
 
-        await dbfil?.search(matchContent, matchId, (item) => {
+        await dbfil?.search({matchContent, matchIds}, (item) => {
             results = [...results, item];
             if (results.length == 3) {
                 setHadiths(results);
@@ -107,18 +107,18 @@ export const HomeScreen = () => {
         let results: Array<any> = [];
         for(let book in selected) {
             const sections: any = selected[book];
+            let ranges: Array<any> = [];
             for(let sectionId in sections) {
                 let section = sections[sectionId];
-                let first = section[SECTION_FIRST];
-                let last = section[SECTION_LAST];
-                await dbfil?.getRange(book, first, last-first+1, (item) => {
-                    results = [...results, item];
-                    if (results.length == 2) {
-                        setHadiths(results);
-                    } 
-                    //console.debug("results.length=>", results.length);
-                })
+                ranges.push([section[SECTION_FIRST], section[SECTION_LAST]])
             }
+            await dbfil?.getRange(book, ranges, (item) => {
+                results = [...results, item];
+                if (results.length == 2) {
+                    setHadiths(results);
+                } 
+                //console.debug("results.length=>", results.length);
+            })
         }
         //console.log(Object.keys(results), "done");
         setHadiths(results);
