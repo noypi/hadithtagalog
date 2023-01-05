@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, FlatList} from 'react-native';
-import { Searchbar, Chip, List, Provider, Surface, Text } from 'react-native-paper';
+import { Searchbar, ActivityIndicator, Surface, Text, Checkbox } from 'react-native-paper';
 import {hadithBooks, hadithSectionOf} from '@data';
 import {openHadithsDb} from '@lib';
 
@@ -11,69 +11,40 @@ import { SECTION_FIRST, SECTION_LAST } from '../data/sections';
 let dbfil;
 openHadithsDb('hadiths.db').then(db => dbfil = db);
 
-const BookChips = ({hadithBooks}) => (
-    <List.Section>
-        <Surface style={styles.row}>
-            {hadithBooks.map((book, key) =>
-                <Chip icon="book" 
-                    onPress={() => console.log(book)}
-                    style={styles.chip}
-                    mode="outlined" 
-                    key={key}>
-                        {book}
-                </Chip>)
-            }
-        </Surface>
-    </List.Section>
-)
-
 export const HomeScreen = () => {
-    const [searchResults, setSearchResults] = React.useState([]);
     const [hadiths, setHadiths] = React.useState([]);
     const [showSectionModal, setShowSectionModal] = React.useState(false);
+    const [useSelectedOnSearch, setUseSelectedOnSearch] = React.useState(false);
+    const [isSearching, setIsSearching] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [selectedCategories, setSelectedCategories] = React.useState({});
     const [searchWords, setSearchWords] = React.useState([]);
     const onChangeSearch = query => {
-        console.debug("+- onChangeSearch() =>", {query});
+        //console.debug("+- onChangeSearch() =>", {query});
         setSearchQuery(query)
         setSearchWords(query.split(" ").filter(word => word.length > 0));
-
-        console.debug("searchResults length =>", searchResults.length);
-        if (searchResults.length > 0) {
-            const filteredResults = searchResults.filter(result => {
-                for(let i=0; i<searchWords.length; i++) {
-                    const word = searchWords[i];
-                    let n = result.content.search(new RegExp(`${word}`, 'i'));
-                    if (0 <= n) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-            setHadiths(filteredResults);
-        }
     }
 
     const onSearch = async () => {
+        setIsSearching(true);
         let results: Array<any> = [];
         let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
-        if (matchContent.length == 0) {
-            if (matchId.length == 0) {
-                matchId = 'bukhari';
-            }
-        }
 
-        await dbfil?.search({matchContent, matchIds}, (item) => {
+        // match 
+        //  - integer ids on search bar
+        //  - hadith content
+        //  - selected categories on search
+        await dbfil?.search({matchContent, matchIds, selected: useSelectedOnSearch ? selectedCategories : null}, (item) => {
             results = [...results, item];
             if (results.length == 3) {
                 setHadiths(results);
             } 
-            console.debug("results.length=>", results.length);
+            //console.debug("results.length=>", results.length);
         })
         setHadiths(results);
-        setSearchResults(results);
-        console.debug("then results.length=>", results.length);
+        setIsSearching(false);
+        //console.debug("then results.length=>", results.length);
     }
 
     const onSubmitEditing = async ({nativeEvent: {text}}) => {
@@ -103,46 +74,52 @@ export const HomeScreen = () => {
     const onSectionsSelected = async (selected) => {
         //console.debug("+-onSectionsSelected() =>", selected);
         setShowSectionModal(false);
+        setSelectedCategories(selected);
 
+        setIsSearching(true);
+        let rangesCount: number = 0;
         let results: Array<any> = [];
-        for(let book in selected) {
-            const sections: any = selected[book];
-            let ranges: Array<any> = [];
-            for(let sectionId in sections) {
-                let section = sections[sectionId];
-                ranges.push([section[SECTION_FIRST], section[SECTION_LAST]])
-            }
-            await dbfil?.getRange(book, ranges, (item) => {
-                results = [...results, item];
-                if (results.length == 2) {
-                    setHadiths(results);
-                } 
-                //console.debug("results.length=>", results.length);
-            })
+        await dbfil?.getSelectedRanges(selected, (item) => {
+            rangesCount++;
+            results = [...results, item];
+            if (results.length == 2) {
+                setHadiths(results);
+            } 
+            //console.debug("results.length=>", results.length);
+        });
+        if(rangesCount > 0) {
+            setUseSelectedOnSearch(true);
         }
         //console.log(Object.keys(results), "done");
         setHadiths(results);
-        setSearchResults(results);
+        setIsSearching(false);
     }
 
     return (
         <ScreenWrapper>
-            <Searchbar
-                placeholder="Search"
-                onChangeText={onChangeSearch}
-                onIconPress={onSearch}
-                onSubmitEditing={onSubmitEditing}
-                value={searchQuery}
-            />
-            <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5, marginLeft:10}} elevation="1">
-                    <Chip icon="format-list-checks" 
-                        style={{flex:4}}
-                        onPress={() => { 
-                            console.debug({showSectionModal});
-                            setShowSectionModal(true)
-                        }}>Mga Kategorya</Chip>
-                    <Text style={{flex: 4}}></Text>
-                    <Text style={{flex: 2}}>Found: {hadiths.length}</Text>
+            <Surface elevation="2">
+                <Searchbar
+                    placeholder="Search"
+                    onChangeText={onChangeSearch}
+                    onIconPress={onSearch}
+                    onSubmitEditing={onSubmitEditing}
+                    value={searchQuery}
+                />
+                <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5, marginLeft:10}}>
+                        <Checkbox
+                            status={useSelectedOnSearch ? 'checked' : 'unchecked'}
+                            onPress={() => {
+                                if (useSelectedOnSearch) {
+                                    setUseSelectedOnSearch(false);
+                                } else {
+                                    setShowSectionModal(true);
+                                }
+                            }}
+                        />
+                        <Text style={{flex: 4}}>Mga Kategorya</Text>
+                        <Text style={{flex: 2}}>Found: {hadiths.length}</Text>
+                </Surface>
+                {isSearching ? <ActivityIndicator animating={isSearching} size="large" /> : null}
             </Surface>
             <FlatList
                 data={hadiths}

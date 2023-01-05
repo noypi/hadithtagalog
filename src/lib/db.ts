@@ -1,6 +1,7 @@
 'strict';
 
 import SQLite from 'react-native-sqlite-storage';
+import {SECTION_FIRST, SECTION_LAST} from '@data';
 
 const DEFAULT_TAGALOG_TRANSLATOR = "google_tl";
 
@@ -10,13 +11,12 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     
     const api = {
         getRange,
+        getSelectedRanges,
         search,
         getByID
     };
 
-    async function getRange(book: string, ranges: Array<any> = [], onResult) {
-        //console.debug("+- getRange() =>", {book, from, limit});
-        let query = "SELECT * from hadiths WHERE";
+    const constructQueryRanges = (query, {book, ranges}) => {
         let queryParams: Array<string> = [];
         const queryBook = "id LIKE ?";
         const queryRanges = (new Array(ranges.length)).fill("(idint BETWEEN ? AND ?)").join(" OR ");
@@ -32,6 +32,14 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         }
         console.debug({query});
         console.debug({queryParams});
+
+        return {query, queryParams};
+    }
+
+    async function getRange(book: string, ranges: Array<any> = [], onResult) {
+        //console.debug("+- getRange() =>", {book, from, limit});
+        let {query, queryParams} = constructQueryRanges("SELECT * from hadiths WHERE", {book, ranges});
+        
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 tx.executeSql(query, queryParams, 
@@ -53,13 +61,52 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         await q;
     }
 
+    async function getSelectedRanges(selected, onResult) {
+        for(let book in selected) {
+            const sections: any = selected[book];
+            let ranges: Array<any> = [];
+            for(let sectionId in sections) {
+                let section = sections[sectionId];
+                ranges.push([section[SECTION_FIRST], section[SECTION_LAST]])
+            }
+            await getRange(book, ranges, onResult);
+        }
+    }
+
     async function search(params, onResult) {
         let {book, matchContent, matchIds} = Object.assign({book: "", matchContent: "*", matchIds: []}, params);
 
-        const query = "SELECT * from hadiths_meta INNER JOIN hadiths_fts ON hadiths_meta.rowid = hadiths_fts.rowid " +
-                      "WHERE content MATCH ? " + (new Array(matchIds.length)).fill("OR hadiths_meta.id LIKE ?").join(" ");
+        if (matchContent.trim().length == 0) {
+            if (!!params.selected) {
+                await getSelectedRanges(params.selected, onResult);
+            }
+            return
+        }
+
+        let query = "SELECT * from hadiths_meta INNER JOIN hadiths_fts ON hadiths_meta.rowid = hadiths_fts.rowid WHERE";
+        let q0 = "content MATCH ? " + (new Array(matchIds.length)).fill("OR hadiths_meta.id LIKE ?").join(" ");
+        query = `${query} (${q0})`;
+        let queryParams = [matchContent, ...matchIds.map(v => `${book}%${v}%`)];
+
+        // append selected sections to query
+        if (!!params.selected) {
+            let q1 = "";
+            Object.keys(params.selected).forEach(bookSection => {
+                let ranges: Array<any> = [];
+                Object.keys(params.selected[bookSection]).forEach(sectionId => {
+                    let section: Array<any> = params.selected[bookSection][sectionId];
+                    ranges.push([section[SECTION_FIRST], section[SECTION_LAST]]);
+                })
+                let q0 = constructQueryRanges(q1, {book: bookSection, ranges});
+                q1 = q0.query;
+                queryParams = [...queryParams, ...q0.queryParams];
+            });
+            query = `${query} AND (${q1})`;
+        }  
+
         console.debug({query});
-        const queryParams = [matchContent, ...matchIds.map(v => `${book}%${v}%`)];
+        console.debug({queryParams});
+        
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 tx.executeSql(query, queryParams, 
