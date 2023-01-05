@@ -84,9 +84,17 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         }
 
         let query = "SELECT * from hadiths_meta INNER JOIN hadiths_fts ON hadiths_meta.rowid = hadiths_fts.rowid WHERE";
-        let q0 = "content MATCH ? " + (new Array(matchIds.length)).fill("OR hadiths_meta.id LIKE ?").join(" ");
-        query = `${query} (${q0})`;
-        let queryParams = [matchContent, ...matchIds.map(v => `${book}%${v}%`)];
+        let q0a = "(content MATCH ?)";
+        let q0b = (new Array(matchIds.length)).fill("hadiths_meta.id LIKE ?").join(" OR ");
+        let queryParams;
+        if (matchIds.length > 0) {
+            query = `${query} ${q0b} UNION ${query} ${q0b}`;
+            queryParams = [...matchIds.map(v => `${book}%${v}%`), matchContent];
+        } else {
+            query =  `${query} (${q0a})`;
+            queryParams = [matchContent];
+        }
+        
 
         // append selected sections to query
         if (!!params.selected) {
