@@ -17,8 +17,6 @@ const TitledItem = ({item, index, onPress}) => {
                     setIsSelected(!isSelected);
                     onPress(item, index, !isSelected);
                 }}
-                color='lime'
-                uncheckedColor='mistyrose'
                 styles={styles.checkbox}
             />
         <Text style={styles.itemStyle} key={index}>{index+1}.  {item[SECTION_NAME]}</Text>
@@ -26,6 +24,7 @@ const TitledItem = ({item, index, onPress}) => {
 }
 
 export const SectionsModal = ({visible, onDismiss, containerStyle}) => {
+    const {colors} = useAppTheme();
     const book = 'bukhari'
     const books = hadithSectionListOf(book);
     const [selectedItems, setSelectedItems] = React.useState(new Array(books.length).fill(false));
@@ -62,12 +61,11 @@ export const SectionsModal = ({visible, onDismiss, containerStyle}) => {
             contentContainerStyle={containerStyle} 
             style={{height: '100%'}}>
             <Surface style={styles.modalViewContainerStyle}>
-                <Surface elevation="3" style={{flexDirection:'row', backgroundColor: 'springgreen', padding:0, margin:0}}>
+                <Surface elevation="3" style={{flexDirection:'row', backgroundColor: colors.primary, padding:0, margin:0}}>
                     <Text style={[styles.titleStyle, {flex: 1, textAlign: 'center'}]}>{book} Sections</Text>
-                    <IconButton style={{backgroundColor: 'white'}} 
-                            onPress={onDismissModal} 
-                            iconColor="green"
+                    <IconButton style={{backgroundColor: 'white', color: colors.primary}} 
                             icon="check-outline"
+                            onPress={onDismissModal} 
                             size={18}/>
                 </Surface>
                 <FlatList
@@ -91,7 +89,6 @@ const styles = StyleSheet.create({
         padding: 2
     },
     titleStyle: {
-        color: 'black',
         fontSize: 18,
         marginBottom: 10,
         marginTop: 10
@@ -105,8 +102,6 @@ const styles = StyleSheet.create({
         paddingRight: 15
     },
     itemContainerSelectedStyle: {
-        backgroundColor: 'honeydew',
-        color: 'black',
     },
     itemStyle: {
         width: '90%'
