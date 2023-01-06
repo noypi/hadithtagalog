@@ -29,7 +29,7 @@ export const SectionsModal = ({visible, onDismiss, containerStyle}) => {
     const books = hadithSectionListOf(book);
     const [selectedItems, setSelectedItems] = React.useState(new Array(books.length).fill(false));
 
-    let checkedItems = {[book]: {}};
+    let checkedItems = {};
 
     const onDismissModal = () => {
         onDismiss(checkedItems);

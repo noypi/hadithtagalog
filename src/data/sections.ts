@@ -61,6 +61,9 @@ export const pushFilterReadyFormat = (obj: any, book: string, sectionId:number, 
 
 export const deleteFromFilterReadyFormat = (obj: any, book: string, sectionId: number) => {
     delete obj[book][sectionId];
+    if (Object.keys(obj[book]).length == 0) {
+        delete obj[book];
+    }
 }
 
 function validateSection(section) {

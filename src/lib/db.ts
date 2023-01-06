@@ -18,12 +18,12 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
 
     const constructQueryRanges = (query, {book, ranges}) => {
         let queryParams: Array<string> = [];
-        const queryBook = "id LIKE ?";
+        const queryBook = "book = ?";
         const queryRanges = (new Array(ranges.length)).fill("(idint BETWEEN ? AND ?)").join(" OR ");
 
         if (queryBook.length > 0) {
             query = `${query} ${queryBook}`;
-            queryParams.push(`${book}%`);
+            queryParams.push(book);
         }
 
         if (queryRanges.trim().length > 0) {
@@ -36,32 +36,47 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         return {query, queryParams};
     }
 
+    function executeSql(tx, query, queryParams, onResult, onDone, onError) {
+        const handleResults = (onDoneResults) => (tx, results, ) => {
+            console.debug("found results.rows.length =>", results.rows.length);
+            for(let i=0; i<results.rows.length; i++) {
+                let item = results.rows.item(i);
+                if (item.id && item.content) {
+                    onResult(item);
+                }
+            }
+            onDoneResults(results.rows.length)
+        };
+
+        tx.executeSql(query + " LIMIT 10", queryParams, handleResults(resultsCount => {
+            if (resultsCount == 10) {
+                tx.executeSql(query + " LIMIT -1 OFFSET 10", queryParams, handleResults(_ => {
+                    onDone();
+                }));
+            } else {
+                onDone();
+            }
+        }));
+    }
+
     async function getRange(book: string, ranges: Array<any> = [], onResult) {
         //console.debug("+- getRange() =>", {book, from, limit});
         let {query, queryParams} = constructQueryRanges("SELECT * from hadiths WHERE", {book, ranges});
         
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
-                tx.executeSql(query, queryParams, 
-                    (tx, results) => {
-                        for(let i=0; i<results.rows.length; i++) {
-                            let item = results.rows.item(i);
-                            if (item.id && item.content) {
-                                onResult(item);
-                            }
-                        }
-                        resolve(true);
-                    },
-                    err => {
-                        errorCB(err);
-                        reject(err);
-                    });
+                executeSql(tx, query, queryParams, onResult, () => {
+                    resolve(true);
+                 }, err => {
+                    errorCB(err);
+                    reject(err);
+                });
             })
         })
         await q;
     }
 
-    async function getSelectedRanges(selected, onResult) {
+    async function getSelectedRanges(selected, onResult, onDone) {
         for(let book in selected) {
             const sections: any = selected[book];
             let ranges: Array<any> = [];
@@ -71,25 +86,26 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
             }
             await getRange(book, ranges, onResult);
         }
+        onDone();
     }
 
-    async function search(params, onResult) {
+    async function search(params, onResult, onDone) {
         let {book, matchContent, matchIds} = Object.assign({book: "", matchContent: "*", matchIds: []}, params);
 
         if (matchContent.trim().length == 0) {
             if (!!params.selected) {
-                await getSelectedRanges(params.selected, onResult);
+                await getSelectedRanges(params.selected, onResult, onDone);
             }
             return
         }
 
         let query = "SELECT * from hadiths_meta INNER JOIN hadiths_fts ON hadiths_meta.rowid = hadiths_fts.rowid WHERE";
         let q0a = "(content MATCH ?)";
-        let q0b = (new Array(matchIds.length)).fill("hadiths_meta.id LIKE ?").join(" OR ");
+        let q0b = (new Array(matchIds.length)).fill("hadiths_meta.idint = ?").join(" OR ");
         let queryParams;
         if (matchIds.length > 0) {
             query = `${query} ${q0b} UNION ${query} ${q0b}`;
-            queryParams = [...matchIds.map(v => `${book}%${v}%`), matchContent];
+            queryParams = [...matchIds.map(v => `${book}:${v}`), matchContent];
         } else {
             query =  `${query} (${q0a})`;
             queryParams = [matchContent];
@@ -117,23 +133,16 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
-                tx.executeSql(query, queryParams, 
-                    (tx, results) => {
-                        for(let i=0; i<results.rows.length; i++) {
-                            let item = results.rows.item(i);
-                            if (item.id && item.content) {
-                                onResult(item);
-                            }
-                        }
-                        resolve(true);
-                    },
-                    err => {
-                        errorCB(err);
-                        reject(err);
-                    });
+                executeSql(tx, query, queryParams, onResult, () => {
+                    resolve(true);
+                 }, err => {
+                    errorCB(err);
+                    reject(err);
+                });
             })
         })
         await q;
+        onDone();
     }
 
     async function getByID(id: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {

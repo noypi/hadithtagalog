@@ -14,7 +14,7 @@ export const HadithCard = ({title, subtitle, content, cardTitle, highlights}) =>
       <Paragraph style={styles.paragraph}>
         <HighlightText
             highlightStyle={styles.highlighted}
-            searchWords={highlights}
+            searchWords={highlights.filter(v => (/^[a-z0-9]+$/i).test(v))}
             textToHighlight={content}
             />
       </Paragraph>

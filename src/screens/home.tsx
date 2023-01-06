@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, FlatList} from 'react-native';
+import {StyleSheet, FlatList, View} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Checkbox } from 'react-native-paper';
 import {hadithBooks, hadithSectionOf} from '@data';
 import {openHadithsDb} from '@lib';
@@ -37,14 +37,14 @@ export const HomeScreen = () => {
         //  - selected categories on search
         await dbfil?.search({matchContent, matchIds, selected: useSelectedOnSearch ? selectedCategories : null}, (item) => {
             results = [...results, item];
-            if (results.length == 3) {
+            if (results.length == 10) {
                 setHadiths(results);
             } 
             //console.debug("results.length=>", results.length);
-        })
-        setHadiths(results);
-        setIsSearching(false);
-        //console.debug("then results.length=>", results.length);
+        }, _ => {
+            setHadiths(results);
+            setIsSearching(false);
+        });
     }
 
     const onSubmitEditing = async ({nativeEvent: {text}}) => {
@@ -72,9 +72,11 @@ export const HomeScreen = () => {
     }
 
     const onSectionsSelected = async (selected) => {
-        //console.debug("+-onSectionsSelected() =>", selected);
+        console.debug("+-onSectionsSelected() =>", selected);
         setShowSectionModal(false);
         setSelectedCategories(selected);
+
+        if (Object.keys(selected).length == 0) { return };
 
         setIsSearching(true);
         let rangesCount: number = 0;
@@ -82,17 +84,18 @@ export const HomeScreen = () => {
         await dbfil?.getSelectedRanges(selected, (item) => {
             rangesCount++;
             results = [...results, item];
-            if (results.length == 2) {
+            if (results.length == 10) {
                 setHadiths(results);
             } 
             //console.debug("results.length=>", results.length);
+        }, _ => {
+            setHadiths(results);
+            setIsSearching(false);
         });
         if(rangesCount > 0) {
             setUseSelectedOnSearch(true);
         }
-        //console.log(Object.keys(results), "done");
-        setHadiths(results);
-        setIsSearching(false);
+        
     }
 
     return (
@@ -106,18 +109,33 @@ export const HomeScreen = () => {
                     value={searchQuery}
                 />
                 <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5, marginLeft:10}}>
-                        <Checkbox
-                            status={useSelectedOnSearch ? 'checked' : 'unchecked'}
-                            onPress={() => {
-                                if (useSelectedOnSearch) {
-                                    setUseSelectedOnSearch(false);
-                                } else {
-                                    setShowSectionModal(true);
-                                }
-                            }}
-                        />
-                        <Text style={{flex: 4}}>Mga Kategorya</Text>
-                        <Text style={{flex: 2}}>Found: {hadiths.length}</Text>
+                        <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
+                            <Checkbox
+                                status={useSelectedOnSearch ? 'checked' : 'unchecked'}
+                                onPress={() => {
+                                    if (useSelectedOnSearch) {
+                                        setUseSelectedOnSearch(false);
+                                    } else {
+                                        setShowSectionModal(true);
+                                    }
+                                }}
+                            />
+                            <Text>Kategorya</Text>
+                        </View>
+                        <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
+                            <Checkbox
+                                status={useSelectedOnSearch ? 'checked' : 'unchecked'}
+                                onPress={() => {
+                                    if (useSelectedOnSearch) {
+                                        setUseSelectedOnSearch(false);
+                                    } else {
+                                        setShowSectionModal(true);
+                                    }
+                                }}
+                            />
+                            <Text>Paborito</Text>
+                        </View>
+                        <Text style={{flex: 1}}>Nakita: {hadiths.length}</Text>
                 </Surface>
                 {isSearching ? <ActivityIndicator animating={isSearching} size="large" /> : null}
             </Surface>
