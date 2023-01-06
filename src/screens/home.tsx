@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
-import { Searchbar, ActivityIndicator, Surface, Text, Checkbox } from 'react-native-paper';
+import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, IconButton } from 'react-native-paper';
 import {hadithBooks, hadithSectionOf} from '@data';
 import {openHadithsDb} from '@lib';
 

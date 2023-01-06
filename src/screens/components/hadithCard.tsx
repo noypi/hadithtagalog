@@ -1,12 +1,12 @@
 import * as React from 'react';
-import {StyleSheet, Text} from 'react-native';
-import { Avatar, Button, Card, Title, Paragraph } from 'react-native-paper';
+import {StyleSheet} from 'react-native';
+import { Avatar, Button, Card, Title, Paragraph, IconButton, Text, Chip } from 'react-native-paper';
 import HighlightText from '@sanar/react-native-highlight-text';
 
 
 const LeftContent = props => <Avatar.Icon {...props} icon="folder" />
 
-export const HadithCard = ({title, subtitle, content, cardTitle, highlights}) => {
+export const HadithCard = ({title, subtitle, content, cardTitle, highlights, onPressFavorite}) => {
   return (<Card>
     <Card.Title title={title} subtitle={subtitle} left={LeftContent} />
     <Card.Content>
@@ -20,8 +20,9 @@ export const HadithCard = ({title, subtitle, content, cardTitle, highlights}) =>
       </Paragraph>
     </Card.Content>
     <Card.Actions>
-      <Button>Cancel</Button>
-      <Button>Ok</Button>
+        <Chip icon="star-plus-outline" onPress={onPressFavorite} mode="flat" elevated="2">Paborito</Chip>
+        <IconButton icon="star-plus-outline" />
+        <Button>Ok</Button>
     </Card.Actions>
   </Card>)
 };

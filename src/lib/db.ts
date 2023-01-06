@@ -10,6 +10,9 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     const db = await SQLite.openDatabase({name, createFromLocation: 1, readOnly},_ => {}, errorCB)
     
     const api = {
+        addFavorite,
+        removeFavorite,
+        getFavorites,
         getRange,
         getSelectedRanges,
         search,
@@ -59,6 +62,38 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         }));
     }
 
+    async function addFavorite(id: string) {
+        db.transaction((tx) => {
+            let query = "INSERT INTO favorites_list(favorites_id) VALUES(?)";
+            tx.executeSql(query, [id], (tx, results) => {
+            })
+        });
+    }
+
+    async function removeFavorite(id: string) {
+        db.transaction((tx) => {
+            let query = "DELETE FROM favorites_list WHERE favorites_id = ?";
+            tx.executeSql(query, [id], (tx, results) => {
+            })
+        });
+    }
+
+    async function getFavorites(onResult, onDone) {
+        let query = "SELECT * from hadiths WHERE favorites_id IS NOT NULL";
+        const q = new Promise((resolve, reject) => {
+            db.transaction((tx) => {
+                executeSql(tx, query, [], onResult, () => {
+                    resolve(true);
+                 }, err => {
+                    errorCB(err);
+                    reject(err);
+                });
+            })
+        })
+        await q;
+        onDone();
+    }
+
     async function getRange(book: string, ranges: Array<any> = [], onResult) {
         //console.debug("+- getRange() =>", {book, from, limit});
         let {query, queryParams} = constructQueryRanges("SELECT * from hadiths WHERE", {book, ranges});
@@ -91,6 +126,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
 
     async function search(params, onResult, onDone) {
         let {book, matchContent, matchIds} = Object.assign({book: "", matchContent: "*", matchIds: []}, params);
+        matchIds = matchIds.map(v => parseInt(v));
 
         if (matchContent.trim().length == 0) {
             if (!!params.selected) {
@@ -99,13 +135,18 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
             return
         }
 
-        let query = "SELECT * from hadiths_meta INNER JOIN hadiths_fts ON hadiths_meta.rowid = hadiths_fts.rowid WHERE";
+        let query = "SELECT * from hadiths WHERE";
         let q0a = "(content MATCH ?)";
-        let q0b = (new Array(matchIds.length)).fill("hadiths_meta.idint = ?").join(" OR ");
+        let q0b = (new Array(matchIds.length)).fill("idint = ?").join(" OR ");
         let queryParams;
         if (matchIds.length > 0) {
-            query = `${query} ${q0b} UNION ${query} ${q0b}`;
-            queryParams = [...matchIds.map(v => `${book}:${v}`), matchContent];
+            if (!params.selected) {
+                query = `${query} ${q0b} UNION ${query} ${q0a}`;
+                queryParams = [...matchIds, matchContent];
+            } else {
+                query = `${query} (${q0a})`;
+                queryParams = [matchContent];
+            }            
         } else {
             query =  `${query} (${q0a})`;
             queryParams = [matchContent];
