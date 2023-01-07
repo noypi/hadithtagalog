@@ -4,6 +4,7 @@ import SQLite from 'react-native-sqlite-storage';
 import {SECTION_FIRST, SECTION_LAST} from '@data';
 
 const DEFAULT_TAGALOG_TRANSLATOR = "google_tl";
+export const QUERY_STEP = 25;
 
 export const openHadithsDb: any = async (name: string, readOnly: boolean = true) => {
     // createFromLocation: 1 => if using ~www/
@@ -39,28 +40,43 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         return {query, queryParams};
     }
 
-    function executeSql(tx, query, queryParams, onResult, onDone, onError) {
-        const handleResults = (onDoneResults) => (tx, results, ) => {
-            console.debug("found results.rows.length =>", results.rows.length);
-            for(let i=0; i<results.rows.length; i++) {
-                let item = results.rows.item(i);
+    async function* executeSql(query, queryParams, onError) {
+        const handleResults = (onDoneResults) => (tx, r) => {
+            let results: Array<any> = [];
+            for(let i=0; i<r.rows.length; i++) {
+                let item = r.rows.item(i);
+                item = Object.assign({id: `${item.book}:${item.idint}`}, item);
                 //console.debug("executeSql=>", {item});
                 if (item.book && item.idint && item.content) {
-                    onResult(Object.assign({id: `${item.book}:${item.idint}`}, item));
+                    results.push(item);
                 }
             }
-            onDoneResults(results.rows.length)
+            onDoneResults(results)
         };
 
-        tx.executeSql(query + " LIMIT 10", queryParams, handleResults(resultsCount => {
-            if (resultsCount == 10) {
-                tx.executeSql(query + " LIMIT -1 OFFSET 10", queryParams, handleResults(_ => {
-                    onDone();
-                }));
-            } else {
-                onDone();
-            }
-        }));
+        const step = QUERY_STEP;
+        let done = false;
+        let offset = 0;
+        while(!done) {
+            let query0 = `${query} LIMIT ${step} OFFSET ${offset}`;
+            console.debug({query0});
+            console.debug({queryParams});
+            let q = new Promise(resolve => {
+                db.transaction(async (tx) => {
+                    tx.executeSql(query0, queryParams, handleResults(r => {
+                        //console.debug({r});
+                        if (r.length < step) {
+                            done = true;
+                        }
+                        offset += QUERY_STEP;
+                        resolve(r);
+                    }));
+                })
+            });
+            let rr = await q;
+            console.debug("yielding rr.length =>", rr.length);
+            yield(rr);
+        }
     }
 
     async function addFavorite(id: string) {
@@ -83,9 +99,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         let query = "SELECT * from hadiths WHERE favorites_id IS NOT NULL";
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
-                executeSql(tx, query, [], onResult, () => {
-                    resolve(true);
-                 }, err => {
+                executeSql(tx, query, [], err => {
                     errorCB(err);
                     reject(err);
                 });
@@ -95,44 +109,59 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         onDone();
     }
 
-    async function getRange(book: string, ranges: Array<any> = [], onResult) {
+    async function getRange(book: string, ranges: Array<any> = []) {
         //console.debug("+- getRange() =>", {book, from, limit});
+        console.debug("getrange ", {ranges});
+        ranges = ranges.slice(1).reduce((prev, curr, currIndex) => {
+            let last = prev[prev.length-1];
+            if ((curr[0] - last[1]) == 1) {
+                // previous END and current BEGIN has diff of 1
+                last[1] = curr[1];
+            } else {
+                prev.push(curr);
+            }
+
+            return prev;
+        }, [ranges[0]]);
+        console.debug("getrange reduced ", {ranges});
         let {query, queryParams} = constructQueryRanges("SELECT * from translations WHERE", {book, ranges});
-        
-        const q = new Promise((resolve, reject) => {
-            db.transaction((tx) => {
-                executeSql(tx, query, queryParams, onResult, () => {
-                    resolve(true);
-                 }, err => {
-                    errorCB(err);
-                    reject(err);
-                });
-            })
-        })
-        await q;
+        return await executeSql(query, queryParams, errorCB);
     }
 
-    async function getSelectedRanges(selected, onResult, onDone) {
+    async function getSelectedRanges(selected) {
+        return await getSelectedRanges0(selected);
+    }
+
+    async function* getSelectedRanges0(selected) {
         for(let book in selected) {
+            console.debug("getSelectedRanges0 ", {book});
             const sections: any = selected[book];
             let ranges: Array<any> = [];
             for(let sectionId in sections) {
                 let section = sections[sectionId];
                 ranges.push([section[SECTION_FIRST], section[SECTION_LAST]])
             }
-            await getRange(book, ranges, onResult);
+
+            let gen  = await getRange(book, ranges);
+            while(true) {
+                let y = await gen.next();
+                console.debug("getSelectedRanges0 ", {y});
+                if (y.done) {
+                    break;
+                };
+                yield(y.value);
+            }
         }
-        onDone();
     }
 
-    async function search(params, onResult, onDone) {
+    async function search(params) {
         let {book, matchContent, matchIds} = Object.assign({book: "", matchContent: "*", matchIds: []}, params);
         matchIds = matchIds.map(v => parseInt(v));
         matchContent = matchContent.split(" ").join("* ") + "*";
 
         if (matchContent.trim().length == 0) {
             if (!!params.selected) {
-                await getSelectedRanges(params.selected, onResult, onDone);
+                await getSelectedRanges(params.selected);
             }
             return
         }
@@ -174,18 +203,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         console.debug({query});
         console.debug({queryParams});
         
-        const q = new Promise((resolve, reject) => {
-            db.transaction((tx) => {
-                executeSql(tx, query, queryParams, onResult, () => {
-                    resolve(true);
-                 }, err => {
-                    errorCB(err);
-                    reject(err);
-                });
-            })
-        })
-        await q;
-        onDone();
+        return await executeSql(query, queryParams, errorCB);
     }
 
     async function getByID(id: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
@@ -206,6 +224,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     async function setContent(id: string, content: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
         let [book, idint] = splitHadithId(id);
         let result = null;
+
         await db.transaction((tx) => {
             tx.executeSql('SELECT * FROM hadiths_index WHERE id = ? AND translator = ?', [id, translator], 
                 (tx, results) => {

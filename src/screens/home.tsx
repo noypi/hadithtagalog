@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, IconButton, Title } from 'react-native-paper';
 import {hadithBooks, hadithSectionOf} from '@data';
-import {openHadithsDb} from '@lib';
+import {openHadithsDb, QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
 import {HadithCard, SectionsModal} from './components';
@@ -21,6 +21,8 @@ export const HomeScreen = () => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = React.useState({});
     const [searchWords, setSearchWords] = React.useState([]);
+    const [isResultGenDone, setIsResultGenDone] = React.useState(true);
+    const [resultGen, setResultGen] = React.useState({next: () => ({value:[], done: true})});
     const [resultHeader, setResultHeader] = React.useState("");
     const [resultHeaderError, setResultHeaderError] = React.useState("");
     const onChangeSearch = query => {
@@ -29,11 +31,14 @@ export const HomeScreen = () => {
         setSearchWords(query.split(" ").filter(word => word.length > 0));
     }
 
+    const setHadithsSafe = (hs) => {
+        setHadiths(!hs ? [] : hs);
+    }
+
     const onSearch = async () => {
         setResultHeader("");
         setResultHeaderError("");
         setIsSearching(true);
-        let results: Array<any> = [];
         let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
 
@@ -41,32 +46,40 @@ export const HomeScreen = () => {
         //  - integer ids on search bar
         //  - hadith content
         //  - selected categories on search
-        await dbfil?.search({matchContent, matchIds, selected: useSelectedOnSearch ? selectedCategories : null}, (item) => {
-            results = [...results, item];
-            if (results.length == 10) {
-                setHadiths(results);
-            } 
-            //console.debug("in search results.length=>", results.length);
-        }, _ => {
-            //console.debug("onSearch onDone() results.length=>", results.length);
-            setHadiths(results);
-            setIsSearching(false);
-            if (results.length > 0) {
-                let msg = "";
-                if (useSelectedOnSearch) { 
-                    msg = "Mga Hadith sa Kategorya";
-                } else {
-                    msg = "Mga Nahanap na Hadith"
-                }
-                setResultHeader(msg);
+        let rg = await dbfil?.search({matchContent, matchIds, selected: useSelectedOnSearch ? selectedCategories : null});
+        setResultGen(rg);
+        let y = await rg.next();
+        setIsResultGenDone(y.done);
+        let results = y.value;
+        setHadithsSafe(results);
+        setIsSearching(false);
+        if (results.length > 0) {
+            let msg = "";
+            if (useSelectedOnSearch) { 
+                msg = "Mga Hadith sa Kategorya";
             } else {
-                let msg = "";
-                if (useSelectedOnSearch) {
-                    msg = "Walang nakita. Subukang tanggalin ang kategorya."
-                }
-                setResultHeaderError(msg);
+                msg = "Mga Nahanap na Hadith"
             }
-        });
+            setResultHeader(msg);
+        } else {
+            let msg = "";
+            if (useSelectedOnSearch) {
+                msg = "Walang nakita. Subukang tanggalin ang kategorya."
+            }
+            setResultHeaderError(msg);
+        }
+    }
+
+    const onScrollToEnd = async () => {
+        setIsSearching(true);
+        let y = await resultGen.next();
+        console.debug("onScrollToEnd ", {done: y.done});
+        setIsResultGenDone(y.done);
+        if (!y.done) {
+            let results = y.value;
+            setHadithsSafe([...hadiths, ...results]);
+        }        
+        setIsSearching(false);
     }
 
     const onSubmitEditing = async ({nativeEvent: {text}}) => {
@@ -83,31 +96,42 @@ export const HomeScreen = () => {
         if (Object.keys(selected).length == 0) { return };
 
         setIsSearching(true);
-        let rangesCount: number = 0;
-        let results: Array<any> = [];
-        await dbfil?.getSelectedRanges(selected, (item) => {
-            rangesCount++;
-            results = [...results, item];
-            if (results.length == 10) {
-                setHadiths(results);
-            } 
-        }, _ => {
-            //console.debug("onSectionsSelected onDone() results.length=>", results.length);
-            setHadiths(results);
-            setIsSearching(false);
-            if (results.length > 0) {
-                let msg = "Mga Hadith sa Kategorya";
-                setResultHeader(msg);
-            }
-        });
-        if(rangesCount > 0) {
-            setUseSelectedOnSearch(true);
+
+        let rg = await dbfil?.getSelectedRanges(selected)
+        setResultGen(rg);
+        let y = await rg.next();
+        setIsResultGenDone(y.done);
+        let results: Array<any> = y.value;
+        setHadithsSafe(results);
+        setIsSearching(false);
+        if (results.length > 0) {
+            let msg = "Mga Hadith sa Kategorya";
+            setResultHeader(msg);
         }
-        
+        setUseSelectedOnSearch(results.length > 0);        
     }
 
-    const renderHadithCard = (item) => {
+    const renderHadithCardStart = () => {
+        if (resultHeader.length > 0) { 
+            return (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderOk]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>);
+        }
+        return null;
+    }
+
+    const renderHadithCardEnd = () => {
+        console.log("renderHadithCardEnd", {isResultGenDone});
+        if (!isResultGenDone && hadiths.length >= QUERY_STEP) {
+            return (<ActivityIndicator animating={true} size="large" style={{marginBottom: 40}}/>)
+        }
+        return null;
+    }
+
+    const renderHadithCard = (item) => {        
         item = item.item;
+
+        if (item === "start") {return renderHadithCardStart()}
+        else if (item === "end") {return renderHadithCardEnd()}
+
         if (!item || !item.content) {
             return null;
         }
@@ -170,18 +194,17 @@ export const HomeScreen = () => {
                         <Text style={{flex: 1}}>Nakita: {hadiths.length}</Text>
                 </Surface>
             </Surface>
-            {(resultHeader.length > 0) ? 
-                (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderOk]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>) : null
-            }
             {(resultHeaderError.length > 0) ? 
                 (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderError]}><Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{resultHeaderError}</Title></Surface>) : null
             }
             <FlatList
-                data={hadiths}
+                data={["start", ...hadiths, "end"]}
                 keyExtractor={(item, i) => i}
                 renderItem={renderHadithCard}
-                onScrollBeginDrag={() => console.log("start scrolling")}
+                onEndReached={onScrollToEnd}
+                onEndReachedThreshold={1}
             />
+            {false && hadiths.length > 0 ? (<ActivityIndicator animating={true} size="large" style={{marginBottom: 40}}/>) : null}
             <SectionsModal 
                 visible={showSectionModal} 
                 containerStyle={styles.modalContainer} 
