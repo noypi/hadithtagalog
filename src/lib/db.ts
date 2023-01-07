@@ -44,8 +44,9 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
             console.debug("found results.rows.length =>", results.rows.length);
             for(let i=0; i<results.rows.length; i++) {
                 let item = results.rows.item(i);
-                if (item.id && item.content) {
-                    onResult(item);
+                //console.debug("executeSql=>", {item});
+                if (item.book && item.idint && item.content) {
+                    onResult(Object.assign({id: `${item.book}:${item.idint}`}, item));
                 }
             }
             onDoneResults(results.rows.length)
@@ -96,7 +97,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
 
     async function getRange(book: string, ranges: Array<any> = [], onResult) {
         //console.debug("+- getRange() =>", {book, from, limit});
-        let {query, queryParams} = constructQueryRanges("SELECT * from hadiths WHERE", {book, ranges});
+        let {query, queryParams} = constructQueryRanges("SELECT * from translations WHERE", {book, ranges});
         
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
@@ -127,6 +128,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     async function search(params, onResult, onDone) {
         let {book, matchContent, matchIds} = Object.assign({book: "", matchContent: "*", matchIds: []}, params);
         matchIds = matchIds.map(v => parseInt(v));
+        matchContent = matchContent.split(" ").join("* ") + "*";
 
         if (matchContent.trim().length == 0) {
             if (!!params.selected) {
@@ -135,7 +137,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
             return
         }
 
-        let query = "SELECT * from hadiths WHERE";
+        let query = "SELECT * from translations WHERE";
         let q0a = "(content MATCH ?)";
         let q0b = (new Array(matchIds.length)).fill("idint = ?").join(" OR ");
         let queryParams;
@@ -187,9 +189,10 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     }
 
     async function getByID(id: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+        let [book, idint] = splitHadithId(id);
         let result = null;
         await db.transaction((tx) => {
-            tx.executeSql('SELECT * FROM hadiths_index WHERE id = ? AND translator = ?', [id, translator], 
+            tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, translator, book], 
                 (tx, results) => {
                     if (results.rows.raw.length > 0) {
                         result = results.rows.raw[0].value;
@@ -201,6 +204,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
     }
 
     async function setContent(id: string, content: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+        let [book, idint] = splitHadithId(id);
         let result = null;
         await db.transaction((tx) => {
             tx.executeSql('SELECT * FROM hadiths_index WHERE id = ? AND translator = ?', [id, translator], 

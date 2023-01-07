@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
-import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, IconButton } from 'react-native-paper';
+import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, IconButton, Title } from 'react-native-paper';
 import {hadithBooks, hadithSectionOf} from '@data';
 import {openHadithsDb} from '@lib';
 
@@ -12,6 +12,8 @@ let dbfil;
 openHadithsDb('hadiths.db').then(db => dbfil = db);
 
 export const HomeScreen = () => {
+    const {colors} = useAppTheme();
+    const styles = makeStyles(colors);
     const [hadiths, setHadiths] = React.useState([]);
     const [showSectionModal, setShowSectionModal] = React.useState(false);
     const [useSelectedOnSearch, setUseSelectedOnSearch] = React.useState(false);
@@ -19,6 +21,8 @@ export const HomeScreen = () => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = React.useState({});
     const [searchWords, setSearchWords] = React.useState([]);
+    const [resultHeader, setResultHeader] = React.useState("");
+    const [resultHeaderError, setResultHeaderError] = React.useState("");
     const onChangeSearch = query => {
         //console.debug("+- onChangeSearch() =>", {query});
         setSearchQuery(query)
@@ -26,6 +30,8 @@ export const HomeScreen = () => {
     }
 
     const onSearch = async () => {
+        setResultHeader("");
+        setResultHeaderError("");
         setIsSearching(true);
         let results: Array<any> = [];
         let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
@@ -40,10 +46,26 @@ export const HomeScreen = () => {
             if (results.length == 10) {
                 setHadiths(results);
             } 
-            //console.debug("results.length=>", results.length);
+            //console.debug("in search results.length=>", results.length);
         }, _ => {
+            //console.debug("onSearch onDone() results.length=>", results.length);
             setHadiths(results);
             setIsSearching(false);
+            if (results.length > 0) {
+                let msg = "";
+                if (useSelectedOnSearch) { 
+                    msg = "Mga Hadith sa Kategorya";
+                } else {
+                    msg = "Mga Nahanap na Hadith"
+                }
+                setResultHeader(msg);
+            } else {
+                let msg = "";
+                if (useSelectedOnSearch) {
+                    msg = "Walang nakita. Subukang tanggalin ang kategorya."
+                }
+                setResultHeaderError(msg);
+            }
         });
     }
 
@@ -51,28 +73,10 @@ export const HomeScreen = () => {
         onSearch();
     };
 
-    const renderHadithCard = (item) => {
-        item = item.item;
-        if (!item || !item.content) {
-            return null;
-        }
-        const text = item.content;
-        const atColon = text.indexOf(":");
-        const cardTitle = (atColon>0) ? text.slice(0, atColon) : "";
-        const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
-        const highlights = searchWords;
-        const props = {
-            highlights, 
-            cardTitle, 
-            title: hadithSectionOf(item.id).title, 
-            content,
-            subtitle: item.id
-        }
-        return (<HadithCard {...props}/>);
-    }
-
     const onSectionsSelected = async (selected) => {
         console.debug("+-onSectionsSelected() =>", selected);
+        setResultHeader("");
+        setResultHeaderError("");
         setShowSectionModal(false);
         setSelectedCategories(selected);
 
@@ -87,10 +91,14 @@ export const HomeScreen = () => {
             if (results.length == 10) {
                 setHadiths(results);
             } 
-            //console.debug("results.length=>", results.length);
         }, _ => {
+            //console.debug("onSectionsSelected onDone() results.length=>", results.length);
             setHadiths(results);
             setIsSearching(false);
+            if (results.length > 0) {
+                let msg = "Mga Hadith sa Kategorya";
+                setResultHeader(msg);
+            }
         });
         if(rangesCount > 0) {
             setUseSelectedOnSearch(true);
@@ -98,17 +106,41 @@ export const HomeScreen = () => {
         
     }
 
+    const renderHadithCard = (item) => {
+        item = item.item;
+        if (!item || !item.content) {
+            return null;
+        }
+        //console.log("renderHadithCard => ", {item});
+        const text = item.content;
+        const atColon = text.indexOf(":");
+        const cardTitle = (atColon>0) ? text.slice(0, atColon) : "";
+        const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
+        const highlights = searchWords;
+        const sectionInfo = hadithSectionOf(item.id);
+        const props = {
+            highlights, 
+            cardTitle, 
+            title: `${sectionInfo.id}. ${sectionInfo.title}`, 
+            content,
+            subtitle: item.id
+        }
+        return (<HadithCard {...props}/>);
+    }
+
     return (
         <ScreenWrapper>
-            <Surface elevation="2">
+            <Surface elevation="2" style={{hidden: true}}>
                 <Searchbar
-                    placeholder="Search"
+                    placeholder={useSelectedOnSearch ? "...Maghanap sa Kategorya" : "...Maghanap ng Hadith"}
                     onChangeText={onChangeSearch}
                     onIconPress={onSearch}
                     onSubmitEditing={onSubmitEditing}
                     value={searchQuery}
+                    loading={isSearching}
+                    placeholderTextColor="rgba(84, 99, 77, 0.55)"
                 />
-                <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5, marginLeft:10}}>
+                <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5}}>
                         <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
                             <Checkbox
                                 status={useSelectedOnSearch ? 'checked' : 'unchecked'}
@@ -137,12 +169,18 @@ export const HomeScreen = () => {
                         </View>
                         <Text style={{flex: 1}}>Nakita: {hadiths.length}</Text>
                 </Surface>
-                {isSearching ? <ActivityIndicator animating={isSearching} size="large" /> : null}
             </Surface>
+            {(resultHeader.length > 0) ? 
+                (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderOk]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>) : null
+            }
+            {(resultHeaderError.length > 0) ? 
+                (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderError]}><Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{resultHeaderError}</Title></Surface>) : null
+            }
             <FlatList
                 data={hadiths}
                 keyExtractor={(item, i) => i}
                 renderItem={renderHadithCard}
+                onScrollBeginDrag={() => console.log("start scrolling")}
             />
             <SectionsModal 
                 visible={showSectionModal} 
@@ -153,7 +191,7 @@ export const HomeScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
     row: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -169,5 +207,19 @@ const styles = StyleSheet.create({
         paddingTop: 30,
         paddingBottom: 30
     },
-
+    resultHeaderText: {
+        padding:5
+    },
+    resultHeaderTextError: {
+        color: colors.error,
+    },
+    resultHeader: { 
+        alignItems: 'center',
+    },
+    resultHeaderError: {
+        backgroundColor: colors.errorContainer,
+    },
+    resultHeaderOk: {
+        backgroundColor: colors.primaryContainer,
+    }
 });
