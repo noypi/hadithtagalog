@@ -45,6 +45,9 @@ export const HomeScreen = () => {
     const onSearch = async () => {
         setResultHeader("");
         setResultHeaderError("");
+
+        setUseFavoritesOnSearch(false);
+        setUseTagsOnSearch(false);
         setIsSearching(true);
         let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
@@ -114,6 +117,9 @@ export const HomeScreen = () => {
         if (results.length > 0) {
             let msg = "Mga Hadith sa Kategorya";
             setResultHeader(msg);
+
+            setUseTagsOnSearch(false);
+            setUseFavoritesOnSearch(false);
         }
         setUseSelectedOnSearch(results.length > 0);        
     }
@@ -137,7 +143,6 @@ export const HomeScreen = () => {
         if (useSelectedOnSearch) {
             setUseSelectedOnSearch(false);
         } else {
-            setUseFavoritesOnSearch(false);
             setShowSectionModal(true);
         }
     }
@@ -175,12 +180,26 @@ export const HomeScreen = () => {
         setShowTagsModal(false);
 
         if (selected.length == 0) {return}
+
+        setIsSearching(true);
         let rg = await dbfil.getTagged(selected);
         setResultGen(rg);
         let y = await rg.next();
         console.debug("onTagsSelected", {y});
+        setIsSearching(false);
+        
+        setUseSelectedOnSearch(false);
+        setUseFavoritesOnSearch(false);
+        setUseTagsOnSearch(true);
+
         setIsResultGenDone(y.done);
         setHadithsSafe(y.value);
+
+        if (y.value.length > 0) {
+            setResultHeader("Mga Hadiths na may Tag");
+        } else {
+            setResultHeaderError("Walang nakitang Hadith na may Tag");
+        }
     }
 
     const onDeleteTag = async (tag) => {
@@ -218,8 +237,10 @@ export const HomeScreen = () => {
             //console.debug({favorites: y.value});
             setHadithsSafe(y.value);
             setFavoritesLocal({});
+            setUseTagsOnSearch(false);
             setUseSelectedOnSearch(false);
             setIsSearching(false);
+            setResultHeader("Mga Paboritong Hadith");
         } else {
             setHadiths([]);
         }
