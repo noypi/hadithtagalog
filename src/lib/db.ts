@@ -2,11 +2,12 @@
 
 import SQLite from 'react-native-sqlite-storage';
 import {SECTION_FIRST, SECTION_LAST} from '@data';
+import { splitHadithId } from './data';
 
 const DEFAULT_TAGALOG_TRANSLATOR = "google_tl";
 export const QUERY_STEP = 25;
 
-export const openHadithsDb: any = async (name: string, readOnly: boolean = true) => {
+export const openHadithsDb: any = async (name: string, readOnly: boolean = false) => {
     // createFromLocation: 1 => if using ~www/
     const db = await SQLite.openDatabase({name, createFromLocation: 1, readOnly},_ => {}, errorCB)
     
@@ -79,34 +80,30 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = true)
         }
     }
 
-    async function addFavorite(id: string) {
+    async function addFavorite(hadithid: string) {
+        console.debug("+-addFavorite()", {hadithid});
+        let [book, id] = splitHadithId(hadithid);
+        console.debug({book, id});
         db.transaction((tx) => {
-            let query = "INSERT INTO favorites_list(favorites_id) VALUES(?)";
-            tx.executeSql(query, [id], (tx, results) => {
+            let query = "INSERT INTO favorites_list(hadiths_meta_rowid) SELECT hadiths.metarowid FROM hadiths WHERE book = ? AND idint = ?";
+            tx.executeSql(query, [book, id], (tx, results) => {
+                console.debug({results});
             })
         });
     }
 
-    async function removeFavorite(id: string) {
+    async function removeFavorite(hadithid: string) {
+        let [book, id] = splitHadithId(hadithid);
         db.transaction((tx) => {
-            let query = "DELETE FROM favorites_list WHERE favorites_id = ?";
-            tx.executeSql(query, [id], (tx, results) => {
+            let query = "DELETE FROM favorites_list WHERE hadiths_meta_rowid in (SELECT hadiths.metarowid FROM hadiths WHERE book = ? AND idint = ?)";
+            tx.executeSql(query, [book, id], (tx, results) => {
             })
         });
     }
 
-    async function getFavorites(onResult, onDone) {
-        let query = "SELECT * from hadiths WHERE favorites_id IS NOT NULL";
-        const q = new Promise((resolve, reject) => {
-            db.transaction((tx) => {
-                executeSql(tx, query, [], err => {
-                    errorCB(err);
-                    reject(err);
-                });
-            })
-        })
-        await q;
-        onDone();
+    async function getFavorites(translator = DEFAULT_TAGALOG_TRANSLATOR) {
+        let query = "SELECT * from translations WHERE hadiths_meta_rowid IN (SELECT hadiths_meta_rowid FROM favorites) AND translator = ?";
+        return await executeSql(query, [translator], errorCB);
     }
 
     async function getRange(book: string, ranges: Array<any> = []) {

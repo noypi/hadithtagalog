@@ -15,8 +15,10 @@ export const HomeScreen = () => {
     const {colors} = useAppTheme();
     const styles = makeStyles(colors);
     const [hadiths, setHadiths] = React.useState([]);
+    const [favoritesLocal, setFavoritesLocal] = React.useState({});
     const [showSectionModal, setShowSectionModal] = React.useState(false);
     const [useSelectedOnSearch, setUseSelectedOnSearch] = React.useState(false);
+    const [useFavoritesOnSearch, setUseFavoritesOnSearch] = React.useState(false);
     const [isSearching, setIsSearching] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = React.useState({});
@@ -126,6 +128,41 @@ export const HomeScreen = () => {
         return null;
     }
 
+    const onPressCategories = () => {
+        if (useSelectedOnSearch) {
+            setUseSelectedOnSearch(false);
+        } else {
+            setUseFavoritesOnSearch(false);
+            setShowSectionModal(true);
+        }
+    }
+
+    const onPressFavorites = async () => {
+        if (!useFavoritesOnSearch) {
+            let rg = await dbfil.getFavorites();
+            setResultGen(rg);
+            let y = await rg.next();
+            setIsResultGenDone(y.done);
+            //console.debug({favorites: y.value});
+            setHadithsSafe(y.value);
+            setFavoritesLocal({});
+            setUseSelectedOnSearch(false);
+        } else {
+            setHadiths([]);
+        }
+        setUseFavoritesOnSearch(!useFavoritesOnSearch);
+    }
+
+    const onAddFavorite = async (id) => {
+        await dbfil.addFavorite(id);
+        setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: true}));
+    }
+
+    const onRemoveFavorite = async (id) => {
+        await dbfil.removeFavorite(id);
+        setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: false}));
+    }
+
     const renderHadithCard = (item) => {        
         item = item.item;
 
@@ -142,12 +179,18 @@ export const HomeScreen = () => {
         const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
         const highlights = searchWords;
         const sectionInfo = hadithSectionOf(item.id);
+        const isFavorite = item.id in favoritesLocal ? favoritesLocal[item.id] : !!item.favorite_id;
         const props = {
+            onAddFavorite,
+            onRemoveFavorite,
+            isFavorite: isFavorite,
+            id: item.id,
             highlights, 
             cardTitle, 
             title: `${sectionInfo.id}. ${sectionInfo.title}`, 
             content,
-            subtitle: item.id
+            subtitle: item.id,
+            extraData: !!favoritesLocal[item.id]
         }
         return (<HadithCard {...props}/>);
     }
@@ -168,26 +211,14 @@ export const HomeScreen = () => {
                         <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
                             <Checkbox
                                 status={useSelectedOnSearch ? 'checked' : 'unchecked'}
-                                onPress={() => {
-                                    if (useSelectedOnSearch) {
-                                        setUseSelectedOnSearch(false);
-                                    } else {
-                                        setShowSectionModal(true);
-                                    }
-                                }}
+                                onPress={onPressCategories}
                             />
                             <Text>Kategorya</Text>
                         </View>
                         <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
                             <Checkbox
-                                status={useSelectedOnSearch ? 'checked' : 'unchecked'}
-                                onPress={() => {
-                                    if (useSelectedOnSearch) {
-                                        setUseSelectedOnSearch(false);
-                                    } else {
-                                        setShowSectionModal(true);
-                                    }
-                                }}
+                                status={useFavoritesOnSearch ? 'checked' : 'unchecked'}
+                                onPress={onPressFavorites}
                             />
                             <Text>Paborito</Text>
                         </View>

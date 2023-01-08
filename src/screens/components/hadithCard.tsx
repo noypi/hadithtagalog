@@ -6,7 +6,8 @@ import HighlightText from '@sanar/react-native-highlight-text';
 
 const LeftContent = props => <Avatar.Icon {...props} icon="folder" />
 
-export const HadithCard = ({title, subtitle, content, cardTitle, highlights, onPressFavorite}) => {
+export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle, highlights, onAddFavorite, onRemoveFavorite}) => {
+    const {colors} = useAppTheme();
   return (<Card>
     <Card.Title title={title} subtitle={subtitle} left={LeftContent} />
     <Card.Content>
@@ -20,8 +21,10 @@ export const HadithCard = ({title, subtitle, content, cardTitle, highlights, onP
       </Paragraph>
     </Card.Content>
     <Card.Actions>
-        <Chip icon="star-plus-outline" onPress={onPressFavorite} mode="flat" elevated="2">Paborito</Chip>
-        <IconButton icon="star-plus-outline" />
+        {isFavorite ?
+            (<IconButton icon="star-minus" iconColor="gold" containerColor={colors.surface} onPress={() => onRemoveFavorite(id)} />) :
+            (<Chip icon="star-plus-outline" onPress={() => onAddFavorite(id)} mode="flat" elevated="2">Paborito</Chip>)
+        }
         <Button>Ok</Button>
     </Card.Actions>
   </Card>)
