@@ -12,6 +12,13 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     const db = await SQLite.openDatabase({name, createFromLocation: 1, readOnly},_ => {}, errorCB)
     
     const api = {
+        getTagged,
+        getTags,
+        newTag,
+        addHadithTag,
+        removeHadithTag,
+        getHadithTags,
+        delTagAndUnTagHadiths,
         addFavorite,
         removeFavorite,
         getFavorites,
@@ -80,6 +87,98 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         }
     }
 
+    async function addHadithTag(hadithid: string, tag: string) {
+        let [book, id] = splitHadithId(hadithid);
+        console.debug({book, id});
+        db.transaction((tx) => {
+            let query = "INSERT INTO tags(tag, book, idint) VALUES(?, ?, ?)";
+            tx.executeSql(query, [tag, book, id], (tx, results) => {
+                //console.debug({results});
+            })
+        });
+    }
+
+    async function removeHadithTag(hadithid: string, tag: string) {
+        let [book, id] = splitHadithId(hadithid);
+        db.transaction((tx) => {
+            let query = "DELETE FROM tags WHERE tag = ? AND book = ? AND idint = ?";
+            tx.executeSql(query, [tag, book, id], (tx, results) => {
+            })
+        });
+    }
+
+    async function delTagAndUnTagHadiths(tag: string) {
+        db.transaction((tx) => {
+            let query1 = "DELETE FROM tags_meta WHERE tag_id IN (SELECT rowid FROM tags_list WHERE tag = ?);";
+            let query2 = "DELETE FROM tags_list WHERE tag = ?;";
+            tx.executeSql(query1, [tag], (tx, results) => {
+                console.debug("delTagAndUnTagHadiths query1", {affected: results.rowsAffected});
+                tx.executeSql(query2, [tag], (tx, results) => {
+                    console.debug("delTagAndUnTagHadiths query2", {affected: results.rowsAffected});
+                })
+            })
+        });
+    }
+
+    async function getHadithTags(hadithId: string) {
+        let [book, id] = splitHadithId(hadithId);
+        let query = "SELECT tag FROM tags WHERE book = ? AND idint = ?";
+        const q = new Promise(resolve => {
+            db.transaction((tx) => {
+                let tags: Array<any> = [];
+                tx.executeSql(query, [book, id], (tx, r) => {
+                    console.debug("getHadithTags", {r});
+                    for(let i=0; i<r.rows.length; i++) {
+                        let item = r.rows.item(i);
+                        tags.push(item.tag);
+                    }
+                    resolve(tags);
+                });
+            });
+        });
+        
+        return await q;
+    }
+
+    async function getTags() {
+        let query = "SELECT tag from tags_list";
+        const q = new Promise(resolve => {
+            db.transaction((tx) => {
+                let tags: Array<any> = [];
+                tx.executeSql(query, [], (tx, r) => {
+                    console.debug("getTags", {r});
+                    for(let i=0; i<r.rows.length; i++) {
+                        let item = r.rows.item(i);
+                        tags.push(item.tag);
+                    }
+                    resolve(tags);
+                });
+            });
+        });
+
+        return await q;
+    }
+
+    async function newTag(tag: string) {
+        if (tag.length == 0) {return}
+        const q = new Promise(resolve => {
+            db.transaction((tx) => {
+                let tags: Array<any> = [];
+                tx.executeSql("INSERT INTO tags_list(tag) VALUES(?)", [tag], (tx, r) => {
+                    resolve(r.rowsAffected == 1);
+                });
+            });
+        })
+        return await q;
+    }
+
+    async function getTagged(tags: Array<string>, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+        let prepareTags = new Array(tags.length).fill('?').join(' ');
+        let query = "SELECT * FROM translations LEFT JOIN tags ON tags.hadiths_meta_rowid = translations.hadiths_meta_rowid "+
+                    `WHERE tag IN (${prepareTags}) AND translator = ?`;
+        return await executeSql(query, [...tags, translator], errorCB);
+    }
+
     async function addFavorite(hadithid: string) {
         console.debug("+-addFavorite()", {hadithid});
         let [book, id] = splitHadithId(hadithid);
@@ -87,7 +186,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         db.transaction((tx) => {
             let query = "INSERT INTO favorites_list(hadiths_meta_rowid) SELECT hadiths.metarowid FROM hadiths WHERE book = ? AND idint = ?";
             tx.executeSql(query, [book, id], (tx, results) => {
-                console.debug({results});
+                //console.debug({results});
             })
         });
     }

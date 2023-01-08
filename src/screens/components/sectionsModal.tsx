@@ -6,6 +6,9 @@ import {SECTION_NAME, hadithSectionListOf, pushFilterReadyFormat, deleteFromFilt
 
 const TitledItem = ({item, index, onPress}) => {
     const [isSelected, setIsSelected] = React.useState(false);
+    const {colors} = useAppTheme();
+
+    const styles = makeStyles(colors);
 
     const backSelected = [styles.itemContainerStyle, styles.itemContainerSelectedStyle];
     const backNotSelected = styles.itemContainerStyle;
@@ -23,12 +26,12 @@ const TitledItem = ({item, index, onPress}) => {
     </Surface>);
 }
 
-export const SectionsModal = ({visible, onDismiss, containerStyle}) => {
+export const SectionsModal = ({visible, onDismiss, containerStyle, book}) => {
     const {colors} = useAppTheme();
-    const book = 'bukhari'
     const books = hadithSectionListOf(book);
     const [selectedItems, setSelectedItems] = React.useState(new Array(books.length).fill(false));
 
+    const styles = makeStyles(colors);
     let checkedItems = {};
 
     const onDismissModal = () => {
@@ -61,7 +64,7 @@ export const SectionsModal = ({visible, onDismiss, containerStyle}) => {
             contentContainerStyle={containerStyle} 
             style={{height: '100%'}}>
             <Surface style={styles.modalViewContainerStyle}>
-                <Surface elevation="3" style={{flexDirection:'row', backgroundColor: colors.primary, padding:0, margin:0}}>
+                <Surface elevation="3" style={styles.titleContainerStyle}>
                     <Text style={[styles.titleStyle, {flex: 1, textAlign: 'center'}]}>{book} Sections</Text>
                     <IconButton style={{backgroundColor: 'white', color: colors.primary}} 
                             icon="check-outline"
@@ -80,7 +83,7 @@ export const SectionsModal = ({visible, onDismiss, containerStyle}) => {
 };
 
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
     modalViewContainerStyle: {
         height: '100%', 
         flex: 1, 
@@ -88,8 +91,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 2
     },
+    titleContainerStyle: {
+        flexDirection:'row', 
+        backgroundColor: colors.primaryContainer, 
+        padding:0, 
+        margin:0}
+    ,
     titleStyle: {
-        fontSize: 18,
         marginBottom: 10,
         marginTop: 10
     },
@@ -102,6 +110,7 @@ const styles = StyleSheet.create({
         paddingRight: 15
     },
     itemContainerSelectedStyle: {
+        backgroundColor: "rgba(0, 110, 0, 0.1)"
     },
     itemStyle: {
         width: '90%'

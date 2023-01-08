@@ -6,7 +6,7 @@ import HighlightText from '@sanar/react-native-highlight-text';
 
 const LeftContent = props => <Avatar.Icon {...props} icon="folder" />
 
-export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle, highlights, onAddFavorite, onRemoveFavorite}) => {
+export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle, highlights, onAddFavorite, onRemoveFavorite, onTagHadith}) => {
     const {colors} = useAppTheme();
   return (<Card>
     <Card.Title title={title} subtitle={subtitle} left={LeftContent} />
@@ -22,10 +22,10 @@ export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle,
     </Card.Content>
     <Card.Actions>
         {isFavorite ?
-            (<IconButton icon="star-minus" iconColor="gold" containerColor={colors.surface} onPress={() => onRemoveFavorite(id)} />) :
-            (<Chip icon="star-plus-outline" onPress={() => onAddFavorite(id)} mode="flat" elevated="2">Paborito</Chip>)
+            (<IconButton icon="star-minus" iconColor="gold" mode="flat" onPress={() => onRemoveFavorite(id)} />) :
+            (<Chip icon="star-plus-outline" onPress={() => onAddFavorite(id)} mode="flat">Paborito</Chip>)
         }
-        <Button>Ok</Button>
+        <IconButton icon="tag-plus" iconColor={colors.primary} containerColor={colors.surface} onPress={() => onTagHadith(id)}/>
     </Card.Actions>
   </Card>)
 };

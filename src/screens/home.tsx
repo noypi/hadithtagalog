@@ -5,8 +5,7 @@ import {hadithBooks, hadithSectionOf} from '@data';
 import {openHadithsDb, QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
-import {HadithCard, SectionsModal} from './components';
-import { SECTION_FIRST, SECTION_LAST } from '../data/sections';
+import {HadithCard, SectionsModal, TagsModal} from './components';
 
 let dbfil;
 openHadithsDb('hadiths.db').then(db => dbfil = db);
@@ -17,8 +16,14 @@ export const HomeScreen = () => {
     const [hadiths, setHadiths] = React.useState([]);
     const [favoritesLocal, setFavoritesLocal] = React.useState({});
     const [showSectionModal, setShowSectionModal] = React.useState(false);
+    const [showTagsModal, setShowTagsModal] = React.useState(false);
+    const [showHadithTagsModal, setShowHadithTagsModal] = React.useState(false);
+    const [hadithIdToTag, setHadithIdToTag] = React.useState("");
+    const [tagsOfHadithIdToTag, setTagsOfHadithIdToTag] = React.useState([]);
+    const [knownTags, setKnownTags] = React.useState([]);
     const [useSelectedOnSearch, setUseSelectedOnSearch] = React.useState(false);
     const [useFavoritesOnSearch, setUseFavoritesOnSearch] = React.useState(false);
+    const [useTagsOnSearch, setUseTagsOnSearch] = React.useState(false);
     const [isSearching, setIsSearching] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = React.useState({});
@@ -137,8 +142,75 @@ export const HomeScreen = () => {
         }
     }
 
+    const updateKnownTags = async (sortfn:(a:string, b:string) => void = () => {}) => {
+        let tags = await dbfil.getTags();
+        console.debug("updateKnownTags", {tags});
+        tags = tags.sort();
+        setKnownTags(tags.sort(sortfn));
+    }
+
+    const onPressTags = async() => {
+        if (!useTagsOnSearch) {
+            await updateKnownTags();
+            setShowTagsModal(true);
+        } else {
+            setUseTagsOnSearch(false);
+        }
+    }
+
+    const onToggleHadithTag = async (hadithId, tag, isSelected) => {
+        if (tag.length == 0) {return}
+
+        isSelected ? 
+            await dbfil.addHadithTag(hadithId, tag) :
+            await dbfil.removeHadithTag(hadithId, tag);
+    }
+
+    const onHadithTagsSelected = async (selected) => {
+        setShowHadithTagsModal(false);
+    }
+
+    const onTagsSelected = async(selected) => {
+        console.debug("onTagsSelected", {selected});
+        setShowTagsModal(false);
+
+        if (selected.length == 0) {return}
+        let rg = await dbfil.getTagged(selected);
+        setResultGen(rg);
+        let y = await rg.next();
+        console.debug("onTagsSelected", {y});
+        setIsResultGenDone(y.done);
+        setHadithsSafe(y.value);
+    }
+
+    const onDeleteTag = async (tag) => {
+        console.debug("onDeleteTag", {tag});
+        await dbfil.delTagAndUnTagHadiths(tag);
+        await updateKnownTags();
+    }
+
+    const onNewTag = async (tag) => {
+        console.debug("onNewTag", {tag});
+        if (await dbfil.newTag(tag)) {
+            await updateKnownTags();
+        } else {
+            console.warn("tag not added");
+        }
+    }
+
+    const onShowTagHadithModal = async (id) => {
+        let tags: Array<string> = await dbfil.getHadithTags(id);
+        console.debug("onShowTagHadithModal", {tags});
+        // pass sortfn to place selected first in order
+        await updateKnownTags((a:string, b:string) => tags.indexOf(a)<0 ? 1 : tags.indexOf(b)<0? -1 : a.localeCompare(b));
+        setTagsOfHadithIdToTag(tags);
+        setHadithIdToTag(id);
+        setShowHadithTagsModal(true);
+    }
+
     const onPressFavorites = async () => {
         if (!useFavoritesOnSearch) {
+            setIsSearching(true);
             let rg = await dbfil.getFavorites();
             setResultGen(rg);
             let y = await rg.next();
@@ -147,6 +219,7 @@ export const HomeScreen = () => {
             setHadithsSafe(y.value);
             setFavoritesLocal({});
             setUseSelectedOnSearch(false);
+            setIsSearching(false);
         } else {
             setHadiths([]);
         }
@@ -183,6 +256,7 @@ export const HomeScreen = () => {
         const props = {
             onAddFavorite,
             onRemoveFavorite,
+            onTagHadith: onShowTagHadithModal,
             isFavorite: isFavorite,
             id: item.id,
             highlights, 
@@ -208,21 +282,28 @@ export const HomeScreen = () => {
                     placeholderTextColor="rgba(84, 99, 77, 0.55)"
                 />
                 <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5}}>
-                        <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
+                        <View style={{flexDirection: 'row', flex: 4, alignItems: 'center'}}>
                             <Checkbox
                                 status={useSelectedOnSearch ? 'checked' : 'unchecked'}
                                 onPress={onPressCategories}
                             />
                             <Text>Kategorya</Text>
                         </View>
-                        <View style={{flexDirection: 'row', flex: 2, alignItems: 'center'}}>
+                        <View style={{flexDirection: 'row', flex: 4, alignItems: 'center'}}>
                             <Checkbox
                                 status={useFavoritesOnSearch ? 'checked' : 'unchecked'}
                                 onPress={onPressFavorites}
                             />
                             <Text>Paborito</Text>
                         </View>
-                        <Text style={{flex: 1}}>Nakita: {hadiths.length}</Text>
+                        <View style={{flexDirection: 'row', flex: 4, alignItems: 'center'}}>
+                            <Checkbox
+                                status={useTagsOnSearch ? 'checked' : 'unchecked'}
+                                onPress={onPressTags}
+                            />
+                            <Text>Tags</Text>
+                        </View>
+                        <Text style={{flex: 1}}>({hadiths.length})</Text>
                 </Surface>
             </Surface>
             {(resultHeaderError.length > 0) ? 
@@ -241,6 +322,24 @@ export const HomeScreen = () => {
                 containerStyle={styles.modalContainer} 
                 book="bukhari"
                 onDismiss={onSectionsSelected} />
+            <TagsModal 
+                title="Maghanap galing sa Tags"
+                visible={showTagsModal} 
+                containerStyle={styles.modalContainer} 
+                tags={knownTags}
+                onDeleteTag={onDeleteTag}
+                onAddTag={onNewTag}
+                onDismiss={onTagsSelected} />
+            <TagsModal 
+                title="e-Tag ang hadith"
+                visible={showHadithTagsModal} 
+                containerStyle={styles.modalContainer} 
+                hadithId={hadithIdToTag}
+                tags={knownTags}
+                hadithTags={tagsOfHadithIdToTag}
+                onAddTag={onNewTag}
+                onDismiss={onHadithTagsSelected} 
+                onToggleItem={onToggleHadithTag}/>
         </ScreenWrapper>
     );
 };
