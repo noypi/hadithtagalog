@@ -19,6 +19,7 @@ export const HomeScreen = () => {
     const {colors} = theme;
     const styles = makeStyles(colors);
     const [hadiths, setHadiths] = React.useState([]);
+    const [hadithsTotal, setHadithsTotal] = React.useState(0);
     const [searchType, setSearchType] = React.useState("");
     const [favoritesLocal, setFavoritesLocal] = React.useState({});
     const [showSectionModal, setShowSectionModal] = React.useState(false);
@@ -42,6 +43,7 @@ export const HomeScreen = () => {
 
     const onBeforePressSearchType = () => {
         setResultHeaderError("");
+        setHadithsTotal(0);
     };
     
     const onChangeSearch = query => {
@@ -71,7 +73,8 @@ export const HomeScreen = () => {
         let y = await rg.next();
         setIsResultGenDone(y.done);
         let results = y.value;
-        setHadithsSafe(results);
+        setHadithsSafe(results?.translations);
+        setHadithsTotal(results?.total);
         setIsSearching(false);
         if (results.length > 0) {
             let msg = "";
@@ -97,7 +100,7 @@ export const HomeScreen = () => {
         setIsResultGenDone(y.done);
         if (!y.done) {
             let results = y.value;
-            setHadithsSafe([...hadiths, ...results]);
+            setHadithsSafe([...hadiths, ...results.translations]);
         }        
         setIsSearching(false);
     }
@@ -125,7 +128,8 @@ export const HomeScreen = () => {
         let y = await rg.next();
         setIsResultGenDone(y.done);
         let results: Array<any> = y.value;
-        setHadithsSafe(results);
+        setHadithsSafe(results?.translations);
+        setHadithsTotal(results?.total);
         setIsSearching(false);
         if (results.length > 0) {
             setResultHeader($SEARCH_CATEGORIES_RESULT_MESSAGE);
@@ -206,11 +210,12 @@ export const HomeScreen = () => {
         let rg = await dbfil.getTagged(selected);
         setResultGen(rg);
         let y = await rg.next();
-        console.debug("onTagsSelected", {y});
+        //console.debug("onTagsSelected", {y});
         setIsSearching(false);
         
         setIsResultGenDone(y.done);
-        setHadithsSafe(y.value);
+        setHadithsSafe(y.value?.translations);
+        setHadithsTotal(y.value?.total);
 
         if (y.value.length > 0) {
             setResultHeader($SEARCH_TAGS_RESULT_MESSAGE);
@@ -253,7 +258,8 @@ export const HomeScreen = () => {
             let y = await rg.next();
             setIsResultGenDone(y.done);
             //console.debug({favorites: y.value});
-            setHadithsSafe(y.value);
+            setHadithsSafe(y.value?.translations);
+            setHadithsTotal(y.value?.total);
             setFavoritesLocal({});
             setIsSearching(false);
             if (y.value.length > 0) {
@@ -341,7 +347,7 @@ export const HomeScreen = () => {
                     </Surface>) : null
                 }
                 <Surface style={{flexDirection: 'row', marginRight:5}}>
-                    <Text style={{flex: 2, textAlign:'right', marginRight:4}}>(xxx{hadiths.length}/xxxx)</Text>
+                    <Text style={{flex: 2, textAlign:'right', marginRight:4}}>({hadiths.length}/{hadithsTotal})</Text>
                 </Surface>
             </Surface>
                 {hadiths.length == 0 && !isSearching ?

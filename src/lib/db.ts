@@ -50,12 +50,15 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
     async function* executeSql(query, queryParams, onError) {
         const handleResults = (onDoneResults) => (tx, r) => {
+            //console.debug("handleResults", {r});
             let results: Array<any> = [];
             for(let i=0; i<r.rows.length; i++) {
                 let item = r.rows.item(i);
-                item = Object.assign({id: `${item.book}:${item.idint}`}, item);
                 //console.debug("executeSql=>", {item});
                 if (item.book && item.idint && item.content) {
+                    item = Object.assign({id: `${item.book}:${item.idint}`}, item);
+                    results.push(item);
+                } else {
                     results.push(item);
                 }
             }
@@ -70,19 +73,38 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             console.debug({query0});
             console.debug({queryParams});
             let q = new Promise(resolve => {
+                let q2 = new Promise(resolve2 => {
+                    if (query.indexOf("SELECT * FROM translations") == 0) {
+                        db.transaction(async (tx) => {
+                            let queryCount = query.replace("SELECT *", "SELECT count() as total");
+                            //console.debug("executeSql", {queryCount});
+                            tx.executeSql(queryCount, queryParams, handleResults(r => {
+                                //console.debug("query count", {r});
+                                if (r.length == 1) {
+                                    resolve2(r[0].total);
+                                } else {
+                                    resolve2(-1);
+                                }
+                            }));
+                        })
+                    } else {
+                        console.debug("no total");
+                        resolve2(-1);
+                    }
+                })
                 db.transaction(async (tx) => {
-                    tx.executeSql(query0, queryParams, handleResults(r => {
+                    tx.executeSql(query0, queryParams, handleResults(async r => {
                         //console.debug({r});
                         if (r.length < step) {
                             done = true;
                         }
                         offset += QUERY_STEP;
-                        resolve(r);
+                        resolve({translations: r, total: await q2});
                     }));
                 })
             });
             let rr = await q;
-            console.debug("yielding rr.length =>", rr.length);
+            console.debug("yielding length =>", rr?.translations.length);
             yield(rr);
         }
     }
@@ -201,7 +223,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function getFavorites(translator = DEFAULT_TAGALOG_TRANSLATOR) {
-        let query = "SELECT * from translations WHERE hadiths_meta_rowid IN (SELECT hadiths_meta_rowid FROM favorites) AND translator = ?";
+        let query = "SELECT * FROM translations WHERE hadiths_meta_rowid IN (SELECT hadiths_meta_rowid FROM favorites) AND translator = ?";
         return await executeSql(query, [translator], errorCB);
     }
 
@@ -220,7 +242,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             return prev;
         }, [ranges[0]]);
         console.debug("getrange reduced ", {ranges});
-        let {query, queryParams} = constructQueryRanges("SELECT * from translations WHERE", {book, ranges});
+        let {query, queryParams} = constructQueryRanges("SELECT * FROM translations WHERE", {book, ranges});
         return await executeSql(query, queryParams, errorCB);
     }
 
@@ -262,7 +284,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             return
         }
 
-        let query = "SELECT * from translations WHERE";
+        let query = "SELECT * FROM translations WHERE";
         let q0a = "(content MATCH ?)";
         let q0b = (new Array(matchIds.length)).fill("idint = ?").join(" OR ");
         let queryParams;
