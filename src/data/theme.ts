@@ -2,6 +2,7 @@ import {MD3LightTheme} from 'react-native-paper';
 
 export const greenTheme = {
     ...MD3LightTheme,
+    animation: {scale:1.0},
     "colors": {
         "primary": "rgb(0, 109, 61)",
         "onPrimary": "rgb(255, 255, 255)",

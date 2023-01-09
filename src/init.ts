@@ -1,5 +1,7 @@
 import {splitHadithId, bookOf, idOf} from '@lib';
 import {greenTheme} from '@data/theme';
+import {defineProperties} from '@data/locale';
+import { localeDefineProperties } from './data/locale';
 
 console.debug("initializing polyfills...");
 
@@ -21,3 +23,5 @@ Object.defineProperties(global, {
         writable: false
     },
 });
+
+Object.defineProperties(global, localeDefineProperties);

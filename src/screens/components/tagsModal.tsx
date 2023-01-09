@@ -64,6 +64,7 @@ export const TagsModal = ({title, tags, visible, onDismiss, onAddTag, containerS
     };
 
     const onAddTagLocal = () => {
+        if (inputValue.length == 0) {return}
         onAddTag(inputValue); 
     }
 
@@ -105,6 +106,7 @@ export const TagsModal = ({title, tags, visible, onDismiss, onAddTag, containerS
                         onSubmitEditing={onAddTagLocal}
                         onChangeText={setInputValue}
                         value={inputValue}
+                        label="Bagong Tag"
                         placeholder="Gumawa ng bagong Tag"
                         placeholderTextColor="rgba(84, 99, 77, 0.65)"
                         mode="flat"

@@ -1,19 +1,25 @@
 import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
-import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, IconButton, Title } from 'react-native-paper';
+import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, SegmentedButtons, Title } from 'react-native-paper';
 import {hadithBooks, hadithSectionOf} from '@data';
 import {openHadithsDb, QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
-import {HadithCard, SectionsModal, TagsModal} from './components';
+import {HadithCard, SectionsModal, TagsModal, SectionsSurface} from './components';
+
+const CATEGORY = "category";
+const FAVORITES = "favorites";
+const TAGS = "tags"
 
 let dbfil;
 openHadithsDb('hadiths.db').then(db => dbfil = db);
 
 export const HomeScreen = () => {
-    const {colors} = useAppTheme();
+    const theme = useAppTheme();
+    const {colors} = theme;
     const styles = makeStyles(colors);
     const [hadiths, setHadiths] = React.useState([]);
+    const [searchType, setSearchType] = React.useState("");
     const [favoritesLocal, setFavoritesLocal] = React.useState({});
     const [showSectionModal, setShowSectionModal] = React.useState(false);
     const [showTagsModal, setShowTagsModal] = React.useState(false);
@@ -21,9 +27,6 @@ export const HomeScreen = () => {
     const [hadithIdToTag, setHadithIdToTag] = React.useState("");
     const [tagsOfHadithIdToTag, setTagsOfHadithIdToTag] = React.useState([]);
     const [knownTags, setKnownTags] = React.useState([]);
-    const [useSelectedOnSearch, setUseSelectedOnSearch] = React.useState(false);
-    const [useFavoritesOnSearch, setUseFavoritesOnSearch] = React.useState(false);
-    const [useTagsOnSearch, setUseTagsOnSearch] = React.useState(false);
     const [isSearching, setIsSearching] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = React.useState({});
@@ -32,6 +35,11 @@ export const HomeScreen = () => {
     const [resultGen, setResultGen] = React.useState({next: () => ({value:[], done: true})});
     const [resultHeader, setResultHeader] = React.useState("");
     const [resultHeaderError, setResultHeaderError] = React.useState("");
+
+    const isCategorySearch = () => searchType == CATEGORY;
+    const isFavoritesSearch = () => searchType == FAVORITES;
+    const isTagsSearch = () => searchType == TAGS;
+    
     const onChangeSearch = query => {
         //console.debug("+- onChangeSearch() =>", {query});
         setSearchQuery(query)
@@ -46,8 +54,6 @@ export const HomeScreen = () => {
         setResultHeader("");
         setResultHeaderError("");
 
-        setUseFavoritesOnSearch(false);
-        setUseTagsOnSearch(false);
         setIsSearching(true);
         let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
@@ -56,7 +62,7 @@ export const HomeScreen = () => {
         //  - integer ids on search bar
         //  - hadith content
         //  - selected categories on search
-        let rg = await dbfil?.search({matchContent, matchIds, selected: useSelectedOnSearch ? selectedCategories : null});
+        let rg = await dbfil?.search({matchContent, matchIds, selected: isCategorySearch() ? selectedCategories : null});
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
@@ -65,16 +71,16 @@ export const HomeScreen = () => {
         setIsSearching(false);
         if (results.length > 0) {
             let msg = "";
-            if (useSelectedOnSearch) { 
-                msg = "Mga Hadith sa Kategorya";
+            if (isCategorySearch()) { 
+                msg = $SEARCH_CATEGORIES_RESULT_MESSAGE;
             } else {
-                msg = "Mga Nahanap na Hadith"
+                msg = $SEARCH_RESULT_MESSAGE;
             }
             setResultHeader(msg);
         } else {
             let msg = "";
-            if (useSelectedOnSearch) {
-                msg = "Walang nakita. Subukang tanggalin ang kategorya."
+            if (isCategorySearch()) {
+                msg = $SEARCH_WITH_CATEGORIES_ZERO_RESULT_MESSAGE;
             }
             setResultHeaderError(msg);
         }
@@ -115,18 +121,16 @@ export const HomeScreen = () => {
         setHadithsSafe(results);
         setIsSearching(false);
         if (results.length > 0) {
-            let msg = "Mga Hadith sa Kategorya";
-            setResultHeader(msg);
-
-            setUseTagsOnSearch(false);
-            setUseFavoritesOnSearch(false);
-        }
-        setUseSelectedOnSearch(results.length > 0);        
+            setResultHeader($SEARCH_CATEGORIES_RESULT_MESSAGE);
+        } else {
+            setSearchType("");
+            setResultHeaderError($SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE);
+        }        
     }
 
     const renderHadithCardStart = () => {
         if (resultHeader.length > 0) { 
-            return (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderOk]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>);
+            return (<Surface elevation="4" style={[styles.resultHeader]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>);
         }
         return null;
     }
@@ -140,10 +144,12 @@ export const HomeScreen = () => {
     }
 
     const onPressCategories = () => {
-        if (useSelectedOnSearch) {
-            setUseSelectedOnSearch(false);
-        } else {
+        if (!isCategorySearch()) {
             setShowSectionModal(true);
+        } else {
+            console.debug("onPressCategories => ", {searchType});
+            setHadiths([]);
+            setSearchType("");
         }
     }
 
@@ -155,11 +161,12 @@ export const HomeScreen = () => {
     }
 
     const onPressTags = async() => {
-        if (!useTagsOnSearch) {
+        if (!isTagsSearch()) {
             await updateKnownTags();
             setShowTagsModal(true);
         } else {
-            setUseTagsOnSearch(false);
+            setHadiths([]);
+            setSearchType("");
         }
     }
 
@@ -179,7 +186,10 @@ export const HomeScreen = () => {
         console.debug("onTagsSelected", {selected});
         setShowTagsModal(false);
 
-        if (selected.length == 0) {return}
+        if (selected.length == 0) {
+            setSearchType("");
+            return
+        }
 
         setIsSearching(true);
         let rg = await dbfil.getTagged(selected);
@@ -188,17 +198,13 @@ export const HomeScreen = () => {
         console.debug("onTagsSelected", {y});
         setIsSearching(false);
         
-        setUseSelectedOnSearch(false);
-        setUseFavoritesOnSearch(false);
-        setUseTagsOnSearch(true);
-
         setIsResultGenDone(y.done);
         setHadithsSafe(y.value);
 
         if (y.value.length > 0) {
-            setResultHeader("Mga Hadiths na may Tag");
+            setResultHeader($SEARCH_TAGS_RESULT_MESSAGE);
         } else {
-            setResultHeaderError("Walang nakitang Hadith na may Tag");
+            setResultHeaderError($SEARCH_TAGS_ZERO_RESULT_MESSAGE);
         }
     }
 
@@ -228,7 +234,8 @@ export const HomeScreen = () => {
     }
 
     const onPressFavorites = async () => {
-        if (!useFavoritesOnSearch) {
+        console.debug("onPressFavorites => ", {searchType});
+        if (!isFavoritesSearch()) {
             setIsSearching(true);
             let rg = await dbfil.getFavorites();
             setResultGen(rg);
@@ -237,14 +244,12 @@ export const HomeScreen = () => {
             //console.debug({favorites: y.value});
             setHadithsSafe(y.value);
             setFavoritesLocal({});
-            setUseTagsOnSearch(false);
-            setUseSelectedOnSearch(false);
             setIsSearching(false);
-            setResultHeader("Mga Paboritong Hadith");
+            y.value.length > 0 ? setResultHeader($SEARCH_FAVORITES_RESULT_MESSAGE) : setResultHeaderError($SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);
         } else {
             setHadiths([]);
+            setSearchType("");
         }
-        setUseFavoritesOnSearch(!useFavoritesOnSearch);
     }
 
     const onAddFavorite = async (id) => {
@@ -292,44 +297,43 @@ export const HomeScreen = () => {
 
     return (
         <ScreenWrapper>
-            <Surface elevation="2" style={{hidden: true}}>
-                <Searchbar
-                    placeholder={useSelectedOnSearch ? "...Maghanap sa Kategorya" : "...Maghanap ng Hadith"}
-                    onChangeText={onChangeSearch}
-                    onIconPress={onSearch}
-                    onSubmitEditing={onSubmitEditing}
-                    value={searchQuery}
-                    loading={isSearching}
-                    placeholderTextColor="rgba(84, 99, 77, 0.55)"
-                />
-                <Surface style={{flexDirection: 'row', alignItems: 'center', marginRight:5}}>
-                        <View style={{flexDirection: 'row', flex: 4, alignItems: 'center'}}>
-                            <Checkbox
-                                status={useSelectedOnSearch ? 'checked' : 'unchecked'}
-                                onPress={onPressCategories}
-                            />
-                            <Text>Kategorya</Text>
-                        </View>
-                        <View style={{flexDirection: 'row', flex: 4, alignItems: 'center'}}>
-                            <Checkbox
-                                status={useFavoritesOnSearch ? 'checked' : 'unchecked'}
-                                onPress={onPressFavorites}
-                            />
-                            <Text>Paborito</Text>
-                        </View>
-                        <View style={{flexDirection: 'row', flex: 4, alignItems: 'center'}}>
-                            <Checkbox
-                                status={useTagsOnSearch ? 'checked' : 'unchecked'}
-                                onPress={onPressTags}
-                            />
-                            <Text>Tags</Text>
-                        </View>
-                        <Text style={{flex: 1}}>({hadiths.length})</Text>
+            <Surface elevation="2">
+                <Surface>
+                    <Searchbar
+                        style={styles.searchbar}
+                        placeholder={isCategorySearch() ? $SEARCH_CATEGORY_PLACEHOLDER : $SEARCH_PLACEHOLDER}
+                        onChangeText={onChangeSearch}
+                        onIconPress={onSearch}
+                        onSubmitEditing={onSubmitEditing}
+                        value={searchQuery}
+                        loading={isSearching}
+                        placeholderTextColor="rgba(84, 99, 77, 0.55)"
+                    />
+                </Surface>
+                <SegmentedButtons
+                        value={hadiths.length > 0 ? searchType : ""}
+                        onValueChange={setSearchType}
+                        buttons={[
+                        { value: CATEGORY, label: 'Kategorya', icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true},
+                        { value: FAVORITES, label: 'Paborito', icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true},
+                        { value: TAGS, label: 'Tags', icon: 'tag-outline', onPress: onPressTags, showSelectedCheck: true },
+                        ]}
+                    />
+                {(resultHeaderError.length > 0) ? 
+                    (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderError]}>
+                        <Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{resultHeaderError}</Title>
+                    </Surface>) : null
+                }
+                <Surface style={{flexDirection: 'row', marginRight:5}}>
+                    <Text style={{flex: 2, textAlign:'right', marginRight:4}}>(xxx{hadiths.length}/xxxx)</Text>
                 </Surface>
             </Surface>
-            {(resultHeaderError.length > 0) ? 
-                (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderError]}><Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{resultHeaderError}</Title></Surface>) : null
-            }
+                {hadiths.length == 0 ?
+                    <SectionsSurface 
+                        containerStyle={styles.modalContainer} 
+                        book="bukhari"
+                        onDismiss={onSectionsSelected} /> : null
+                }
             <FlatList
                 data={["start", ...hadiths, "end"]}
                 keyExtractor={(item, i) => i}
@@ -337,14 +341,14 @@ export const HomeScreen = () => {
                 onEndReached={onScrollToEnd}
                 onEndReachedThreshold={1}
             />
-            {false && hadiths.length > 0 ? (<ActivityIndicator animating={true} size="large" style={{marginBottom: 40}}/>) : null}
+
             <SectionsModal 
                 visible={showSectionModal} 
                 containerStyle={styles.modalContainer} 
                 book="bukhari"
                 onDismiss={onSectionsSelected} />
             <TagsModal 
-                title="Maghanap galing sa Tags"
+                title={$TAG_SEARCH_MODAL_TITLE}
                 visible={showTagsModal} 
                 containerStyle={styles.modalContainer} 
                 tags={knownTags}
@@ -352,7 +356,7 @@ export const HomeScreen = () => {
                 onAddTag={onNewTag}
                 onDismiss={onTagsSelected} />
             <TagsModal 
-                title="e-Tag ang hadith"
+                title={$TAG_MODAL_TITLE}
                 visible={showHadithTagsModal} 
                 containerStyle={styles.modalContainer} 
                 hadithId={hadithIdToTag}
@@ -366,6 +370,8 @@ export const HomeScreen = () => {
 };
 
 const makeStyles = (colors) => StyleSheet.create({
+    searchbar: {
+    },
     row: {
         flexDirection: 'row',
         flexWrap: 'wrap',

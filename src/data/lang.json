@@ -1,0 +1,54 @@
+{
+    SEARCH_PLACEHOLDER: {
+        "eng": "...Search for Hadiths",
+        "fil": "...Maghanap ng Hadith"
+    },
+    SEARCH_CATEGORY_PLACEHOLDER: {
+        "eng": "...Search in Categories",
+        "fil": "...Maghanap sa Kategorya"
+    },
+    SEARCH_RESULT_MESSAGE: {
+        "eng": "Hadith Search Results",
+        "fil": "Mga Nahanap na Hadith"
+    },
+    SEARCH_FAVORITES_RESULT_MESSAGE: {
+        "eng": "Favorites Hadith",
+        "fil": "Mga Paboritong Hadith"
+    },
+    SEARCH_FAVORITES_ZERO_RESULT_MESSAGE: {
+        "eng": "No Favorites Hadith",
+        "fil": "Walang Paboritong Hadith"
+    },
+    SEARCH_TAGS_RESULT_MESSAGE: {
+        "eng": "Tagged Hadiths",
+        "fil": "Mga Hadiths na may Tag"
+    },
+    SEARCH_TAGS_ZERO_RESULT_MESSAGE: {
+        "eng": "No Tagged Hadith found",
+        "fil": "Walang nakitang Hadith na may Tag"
+    },
+    SEARCH_CATEGORIES_RESULT_MESSAGE: {
+        "eng": "Hadiths in Selected Categories",
+        "fil": "Mga Hadith sa Napiling Kategorya"
+    },
+    SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE: {
+        "eng": "No Hadith selected.",
+        "fil": "Walang napiling Hadith."
+    },
+    SEARCH_WITH_CATEGORIES_ZERO_RESULT_MESSAGE: {
+        "eng": "No Hadith found. Try searhing without Categories.",
+        "fil": "Walang nakita. Subukang maghanap ng walang Kategorya."
+    },
+    NO_FAVORITES_FOUND: {
+        "eng": "No favorite Hadith found",
+        "fil": "Walang paboritong hadith" 
+    },
+    TAG_MODAL_TITLE: {
+        "eng": "Tag the Hadith",
+        "fil": "e-Tag ang Hadith"
+    },
+    TAG_SEARCH_MODAL_TITLE: {
+        "eng": "Search from Tags",
+        "fil": "Maghanap galing sa Tags"
+    }
+}
