@@ -24,7 +24,7 @@ const TitledItem = ({item, index, onPress}) => {
         </View>);
 }
 
-export const SectionsSurface = ({onDismiss, containerStyle, book}) => {
+export const SectionsSurface = ({onPressItem, containerStyle, book}) => {
     const {colors} = useAppTheme();
     const books = hadithSectionListOf(book);
     const [selectedItems, setSelectedItems] = React.useState(new Array(books.length).fill(false));
@@ -32,31 +32,22 @@ export const SectionsSurface = ({onDismiss, containerStyle, book}) => {
     const styles = makeStyles(colors);
     let checkedItems = {};
 
-    const onDismissModal = () => {
-        onDismiss(checkedItems);
-    };
-
     if (!containerStyle) {
         containerStyle = {}
     }
     
-    const onCheckedItem = (item, index, isSelected) => {
+    const onPressItemLocal = (item, index, isSelected) => {
         //console.debug({isSelected});
-        if (isSelected) {
-            checkedItems = pushFilterReadyFormat(checkedItems, book, index+1, item);
-        } else {
-            deleteFromFilterReadyFormat(checkedItems, book, index+1);
-        }
+        onPressItem(pushFilterReadyFormat(checkedItems, book, index+1, item));
         //console.debug({checkedItems});
     };
 
     const renderTitles = (v) => {
-        return <TitledItem {...v} onPress={onCheckedItem} />
+        return <TitledItem {...v} onPress={onPressItemLocal} />
     }
 
  return (
     <Surface 
-        onDismiss={onDismissModal} 
         style={[styles.containerStyle]}>
             <FlatList
                 style={{width:'100%'}}

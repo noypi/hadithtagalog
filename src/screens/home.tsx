@@ -39,6 +39,10 @@ export const HomeScreen = () => {
     const isCategorySearch = () => searchType == CATEGORY;
     const isFavoritesSearch = () => searchType == FAVORITES;
     const isTagsSearch = () => searchType == TAGS;
+
+    const onBeforePressSearchType = () => {
+        setResultHeaderError("");
+    };
     
     const onChangeSearch = query => {
         //console.debug("+- onChangeSearch() =>", {query});
@@ -102,14 +106,17 @@ export const HomeScreen = () => {
         onSearch();
     };
 
-    const onSectionsSelected = async (selected) => {
-        console.debug("+-onSectionsSelected() =>", selected);
+    const onCategoriesSelected = async (selected) => {
+        console.debug("+-onCategoriesSelected() =>", selected);
         setResultHeader("");
         setResultHeaderError("");
         setShowSectionModal(false);
         setSelectedCategories(selected);
 
-        if (Object.keys(selected).length == 0) { return };
+        if (Object.keys(selected).length == 0) { 
+            setResultHeaderError($SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE);
+            return 
+        };
 
         setIsSearching(true);
 
@@ -144,12 +151,14 @@ export const HomeScreen = () => {
     }
 
     const onPressCategories = () => {
+        console.debug("onPressCategories", {searchType});
+        onBeforePressSearchType();
         if (!isCategorySearch()) {
             setShowSectionModal(true);
         } else {
-            console.debug("onPressCategories => ", {searchType});
             setHadiths([]);
             setSearchType("");
+            setSelectedCategories({});
         }
     }
 
@@ -161,6 +170,7 @@ export const HomeScreen = () => {
     }
 
     const onPressTags = async() => {
+        onBeforePressSearchType();
         if (!isTagsSearch()) {
             await updateKnownTags();
             setShowTagsModal(true);
@@ -187,6 +197,7 @@ export const HomeScreen = () => {
         setShowTagsModal(false);
 
         if (selected.length == 0) {
+            setResultHeaderError($SEARCH_TAGS_ZERO_RESULT_MESSAGE);
             setSearchType("");
             return
         }
@@ -234,7 +245,7 @@ export const HomeScreen = () => {
     }
 
     const onPressFavorites = async () => {
-        console.debug("onPressFavorites => ", {searchType});
+        onBeforePressSearchType();
         if (!isFavoritesSearch()) {
             setIsSearching(true);
             let rg = await dbfil.getFavorites();
@@ -245,7 +256,12 @@ export const HomeScreen = () => {
             setHadithsSafe(y.value);
             setFavoritesLocal({});
             setIsSearching(false);
-            y.value.length > 0 ? setResultHeader($SEARCH_FAVORITES_RESULT_MESSAGE) : setResultHeaderError($SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);
+            if (y.value.length > 0) {
+                setResultHeader($SEARCH_FAVORITES_RESULT_MESSAGE)
+            } else {
+                setResultHeaderError($SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);
+                setSearchType("");
+            }
         } else {
             setHadiths([]);
             setSearchType("");
@@ -311,8 +327,8 @@ export const HomeScreen = () => {
                     />
                 </Surface>
                 <SegmentedButtons
-                        value={hadiths.length > 0 ? searchType : ""}
-                        onValueChange={setSearchType}
+                        value={searchType}
+                        onValueChange={v => setSearchType(v==searchType ? "" : v)}
                         buttons={[
                         { value: CATEGORY, label: 'Kategorya', icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true},
                         { value: FAVORITES, label: 'Paborito', icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true},
@@ -328,11 +344,11 @@ export const HomeScreen = () => {
                     <Text style={{flex: 2, textAlign:'right', marginRight:4}}>(xxx{hadiths.length}/xxxx)</Text>
                 </Surface>
             </Surface>
-                {hadiths.length == 0 ?
+                {hadiths.length == 0 && !isSearching ?
                     <SectionsSurface 
                         containerStyle={styles.modalContainer} 
                         book="bukhari"
-                        onDismiss={onSectionsSelected} /> : null
+                        onPressItem={onCategoriesSelected} /> : null
                 }
             <FlatList
                 data={["start", ...hadiths, "end"]}
@@ -346,7 +362,7 @@ export const HomeScreen = () => {
                 visible={showSectionModal} 
                 containerStyle={styles.modalContainer} 
                 book="bukhari"
-                onDismiss={onSectionsSelected} />
+                onDismiss={onCategoriesSelected} />
             <TagsModal 
                 title={$TAG_SEARCH_MODAL_TITLE}
                 visible={showTagsModal} 
