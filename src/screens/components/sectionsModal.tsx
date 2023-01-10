@@ -59,6 +59,7 @@ export const SectionsModal = ({visible, onDismiss, containerStyle, book}) => {
  return (
     <Portal style={{alignItems: 'center'}}>
         <Modal 
+            useNativeDriver={true}
             visible={visible} 
             onDismiss={onDismissModal} 
             contentContainerStyle={containerStyle} 

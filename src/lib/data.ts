@@ -1,4 +1,5 @@
 export const splitHadithId = (hadithId) => {
+    //console.debug("splitHadithId", {hadithId});
     let ss = hadithId.split(":");
     return [ss[0], parseInt(ss[1])];
 }

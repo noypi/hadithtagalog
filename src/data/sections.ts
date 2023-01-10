@@ -5,10 +5,14 @@ export const SECTION_LAST  = 2;
 export const bukhariSections = require("./bukhari-sections.json");
 export const bukhariSectionsList = Object.values(bukhariSections).sort((a,b) => a[SECTION_FIRST] > b[SECTION_FIRST]);
 
+const hadithInfo = require("./hadithInfo.json");
+
 export const books2Sections = {
     "bukhari": bukhariSections,
     "bukhari-list": bukhariSectionsList
 }
+
+export const bookNameOf = (book) => hadithInfo[book]["metadata"].name;
 
 export const hadithSectionListOf = (book) => books2Sections[book+'-list'];
 

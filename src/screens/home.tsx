@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, SegmentedButtons, Title } from 'react-native-paper';
-import {hadithBooks, hadithSectionOf} from '@data';
+import {hadithBooks, hadithSectionOf, bookNameOf} from '@data';
 import {openHadithsDb, QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
@@ -31,7 +31,7 @@ export const HomeScreen = () => {
     const [isSearching, setIsSearching] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = React.useState({});
-    const [searchWords, setSearchWords] = React.useState([]);
+    const [highlightWords, setHighlightWords] = React.useState([]);
     const [isResultGenDone, setIsResultGenDone] = React.useState(true);
     const [resultGen, setResultGen] = React.useState({next: () => ({value:[], done: true})});
     const [resultHeader, setResultHeader] = React.useState("");
@@ -40,54 +40,65 @@ export const HomeScreen = () => {
     const isCategorySearch = () => searchType == CATEGORY;
     const isFavoritesSearch = () => searchType == FAVORITES;
     const isTagsSearch = () => searchType == TAGS;
+    const searchWords = () => searchQuery.split(" ").filter(word => word.length > 0);
 
     const onBeforePressSearchType = () => {
         setResultHeaderError("");
-        setHadithsTotal(0);
     };
     
     const onChangeSearch = query => {
         //console.debug("+- onChangeSearch() =>", {query});
         setSearchQuery(query)
-        setSearchWords(query.split(" ").filter(word => word.length > 0));
     }
 
     const setHadithsSafe = (hs) => {
+        //console.debug("setHadithsSafe", {hs});
         setHadiths(!hs ? [] : hs);
     }
 
     const onSearch = async () => {
+        console.debug("+-onSearch()");
+        const words = searchWords();
+        setHighlightWords(words);
         setResultHeader("");
         setResultHeaderError("");
 
         setIsSearching(true);
-        let matchIds = searchWords.filter(w => Number.isInteger(parseInt(w)));
+        setHadithsTotal(0);
+        let matchIds = words.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
 
+        const qSearchByIds = matchIds.length > 0 ? dbfil?.searchByIDs([], matchIds) : Promise.resolve([]);
         // match 
         //  - integer ids on search bar
         //  - hadith content
         //  - selected categories on search
-        let rg = await dbfil?.search({matchContent, matchIds, selected: isCategorySearch() ? selectedCategories : null});
+        let rg = await dbfil?.search({matchContent, selected: isCategorySearch() ? selectedCategories : null});
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
         let results = y.value;
-        setHadithsSafe(results?.translations);
-        setHadithsTotal(results?.total);
+        
+        let byIdsResults = await qSearchByIds;
+        let hasSearchResults = results?.translations.length ?? false;
+        let translations = [...(byIdsResults?.translations ?? []), ...(results?.translations)];
+        setHadithsSafe(translations);
+        setHadithsTotal(results?.total + (byIdsResults?.total ?? 0));
         setIsSearching(false);
-        if (results.length > 0) {
+        if (translations.length > 0) {
             let msg = "";
             if (isCategorySearch()) { 
-                msg = $SEARCH_CATEGORIES_RESULT_MESSAGE;
+                msg = (hasSearchResults) ? $SEARCH_CATEGORIES_RESULT_MESSAGE : $SEARCH_IDS_RESULT_MESSAGE;
             } else {
-                msg = $SEARCH_RESULT_MESSAGE;
+                msg = (hasSearchResults) ? $SEARCH_RESULT_MESSAGE : $SEARCH_IDS_RESULT_MESSAGE;
             }
             setResultHeader(msg);
         } else {
             let msg = "";
             if (isCategorySearch()) {
                 msg = $SEARCH_WITH_CATEGORIES_ZERO_RESULT_MESSAGE;
+            } else {
+                msg = $SEARCH_ZERO_RESULT_MESSAGE;
             }
             setResultHeaderError(msg);
         }
@@ -106,6 +117,7 @@ export const HomeScreen = () => {
     }
 
     const onSubmitEditing = async ({nativeEvent: {text}}) => {
+        setHighlightWords(searchWords());
         onSearch();
     };
 
@@ -122,6 +134,7 @@ export const HomeScreen = () => {
         };
 
         setIsSearching(true);
+        setHadithsTotal(0);
 
         let rg = await dbfil?.getSelectedRanges(selected)
         setResultGen(rg);
@@ -131,7 +144,7 @@ export const HomeScreen = () => {
         setHadithsSafe(results?.translations);
         setHadithsTotal(results?.total);
         setIsSearching(false);
-        if (results.length > 0) {
+        if (results?.translations.length > 0) {
             setResultHeader($SEARCH_CATEGORIES_RESULT_MESSAGE);
         } else {
             setSearchType("");
@@ -140,6 +153,7 @@ export const HomeScreen = () => {
     }
 
     const renderHadithCardStart = () => {
+        console.log("renderHadithCardStart", {isResultGenDone});
         if (resultHeader.length > 0) { 
             return (<Surface elevation="4" style={[styles.resultHeader]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>);
         }
@@ -207,17 +221,19 @@ export const HomeScreen = () => {
         }
 
         setIsSearching(true);
+        setHadithsTotal(0);
         let rg = await dbfil.getTagged(selected);
         setResultGen(rg);
         let y = await rg.next();
         //console.debug("onTagsSelected", {y});
         setIsSearching(false);
-        
-        setIsResultGenDone(y.done);
-        setHadithsSafe(y.value?.translations);
-        setHadithsTotal(y.value?.total);
 
-        if (y.value.length > 0) {
+        let results = y.value;
+        setIsResultGenDone(y.done);
+        setHadithsSafe(results?.translations);
+        setHadithsTotal(results?.total);
+
+        if (results?.translations.length > 0) {
             setResultHeader($SEARCH_TAGS_RESULT_MESSAGE);
         } else {
             setResultHeaderError($SEARCH_TAGS_ZERO_RESULT_MESSAGE);
@@ -253,16 +269,18 @@ export const HomeScreen = () => {
         onBeforePressSearchType();
         if (!isFavoritesSearch()) {
             setIsSearching(true);
+            setHadithsTotal(0);
             let rg = await dbfil.getFavorites();
             setResultGen(rg);
             let y = await rg.next();
             setIsResultGenDone(y.done);
             //console.debug({favorites: y.value});
-            setHadithsSafe(y.value?.translations);
-            setHadithsTotal(y.value?.total);
+            let results = y.value;
+            setHadithsSafe(results?.translations);
+            setHadithsTotal(results?.total);
             setFavoritesLocal({});
             setIsSearching(false);
-            if (y.value.length > 0) {
+            if (results?.translations.length > 0) {
                 setResultHeader($SEARCH_FAVORITES_RESULT_MESSAGE)
             } else {
                 setResultHeaderError($SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);
@@ -294,11 +312,12 @@ export const HomeScreen = () => {
             return null;
         }
         //console.log("renderHadithCard => ", {item});
+        const [book, id] = splitHadithId(item.id);
         const text = item.content;
         const atColon = text.indexOf(":");
         const cardTitle = (atColon>0) ? text.slice(0, atColon) : "";
         const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
-        const highlights = searchWords;
+        const highlights = highlightWords.filter(v => (/^[a-z0-9]+$/i).test(v));
         const sectionInfo = hadithSectionOf(item.id);
         const isFavorite = item.id in favoritesLocal ? favoritesLocal[item.id] : !!item.favorite_id;
         const props = {
@@ -311,7 +330,7 @@ export const HomeScreen = () => {
             cardTitle, 
             title: `${sectionInfo.id}. ${sectionInfo.title}`, 
             content,
-            subtitle: item.id,
+            subtitle: `${bookNameOf(book)} (${id})`,
             extraData: !!favoritesLocal[item.id]
         }
         return (<HadithCard {...props}/>);

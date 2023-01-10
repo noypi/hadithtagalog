@@ -86,6 +86,7 @@ export const TagsModal = ({title, tags, visible, onDismiss, onAddTag, containerS
  return (
     <Portal style={{alignItems: 'center'}}>
         <Modal 
+            useNativeDriver={true}
             visible={visible} 
             onDismiss={onDismissModal} 
             contentContainerStyle={containerStyle} 

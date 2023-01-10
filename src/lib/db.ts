@@ -9,7 +9,7 @@ export const QUERY_STEP = 25;
 
 export const openHadithsDb: any = async (name: string, readOnly: boolean = false) => {
     // createFromLocation: 1 => if using ~www/
-    const db = await SQLite.openDatabase({name, createFromLocation: 1, readOnly},_ => {}, errorCB)
+    const db = await SQLite.openDatabase({name, createFromLocation: 1, readOnly},_ => {}, errorCB())
     
     const api = {
         getTagged,
@@ -24,6 +24,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         getFavorites,
         getRange,
         getSelectedRanges,
+        searchByIDs,
         search,
         getByID
     };
@@ -83,7 +84,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                                 if (r.length == 1) {
                                     resolve2(r[0].total);
                                 } else {
-                                    resolve2(-1);
+                                    resolve2(0);
                                 }
                             }));
                         })
@@ -149,7 +150,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             db.transaction((tx) => {
                 let tags: Array<any> = [];
                 tx.executeSql(query, [book, id], (tx, r) => {
-                    console.debug("getHadithTags", {r});
+                    //console.debug("getHadithTags", {r});
                     for(let i=0; i<r.rows.length; i++) {
                         let item = r.rows.item(i);
                         tags.push(item.tag);
@@ -168,7 +169,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             db.transaction((tx) => {
                 let tags: Array<any> = [];
                 tx.executeSql(query, [], (tx, r) => {
-                    console.debug("getTags", {r});
+                    //console.debug("getTags", {r});
                     for(let i=0; i<r.rows.length; i++) {
                         let item = r.rows.item(i);
                         tags.push(item.tag);
@@ -198,7 +199,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         let prepareTags = new Array(tags.length).fill('?').join(' ');
         let query = "SELECT * FROM translations LEFT JOIN tags ON tags.hadiths_meta_rowid = translations.hadiths_meta_rowid "+
                     `WHERE tag IN (${prepareTags}) AND translator = ?`;
-        return await executeSql(query, [...tags, translator], errorCB);
+        return await executeSql(query, [...tags, translator], errorCB());
     }
 
     async function addFavorite(hadithid: string) {
@@ -224,7 +225,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
     async function getFavorites(translator = DEFAULT_TAGALOG_TRANSLATOR) {
         let query = "SELECT * FROM translations WHERE hadiths_meta_rowid IN (SELECT hadiths_meta_rowid FROM favorites) AND translator = ?";
-        return await executeSql(query, [translator], errorCB);
+        return await executeSql(query, [translator], errorCB());
     }
 
     async function getRange(book: string, ranges: Array<any> = []) {
@@ -243,7 +244,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         }, [ranges[0]]);
         console.debug("getrange reduced ", {ranges});
         let {query, queryParams} = constructQueryRanges("SELECT * FROM translations WHERE", {book, ranges});
-        return await executeSql(query, queryParams, errorCB);
+        return await executeSql(query, queryParams, errorCB());
     }
 
     async function getSelectedRanges(selected) {
@@ -273,8 +274,10 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function search(params) {
-        let {book, matchContent, matchIds} = Object.assign({book: "", matchContent: "*", matchIds: []}, params);
-        matchIds = matchIds.map(v => parseInt(v));
+        let {matchContent} = params;
+        if (matchContent.length == 0) {
+            return (function*(){})();//empty generator
+        }
         matchContent = matchContent.split(" ").join("* ") + "*";
 
         if (matchContent.trim().length == 0) {
@@ -286,20 +289,9 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
         let query = "SELECT * FROM translations WHERE";
         let q0a = "(content MATCH ?)";
-        let q0b = (new Array(matchIds.length)).fill("idint = ?").join(" OR ");
         let queryParams;
-        if (matchIds.length > 0) {
-            if (!params.selected) {
-                query = `${query} ${q0b} UNION ${query} ${q0a}`;
-                queryParams = [...matchIds, matchContent];
-            } else {
-                query = `${query} (${q0a})`;
-                queryParams = [matchContent];
-            }            
-        } else {
-            query =  `${query} (${q0a})`;
-            queryParams = [matchContent];
-        }
+        query =  `${query} (${q0a})`;
+        queryParams = [matchContent];
         
 
         // append selected sections to query
@@ -321,7 +313,47 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         console.debug({query});
         console.debug({queryParams});
         
-        return await executeSql(query, queryParams, errorCB);
+        return await executeSql(query, queryParams, errorCB());
+    }
+
+    async function searchByIDs(books: Array<string>, ids, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+        if (books.length == 0 && ids.length == 0) {
+            return [];
+        }
+        ids = ids.map(v => parseInt(v));
+        let q = new Promise((resolve, reject) => {
+            db.transaction((tx) => {
+                let query = "SELECT * FROM translations WHERE translator = ?";
+                let q0: Array<string> = [];
+                if (books.length > 0) {
+                    let queryBooks = (new Array(books.length)).fill("?").join(",");
+                    q0.push(`book IN (${queryBooks})`);
+                }
+                if (ids.length > 0) {
+                    let queryIds = (new Array(ids.length)).fill("?").join(",");
+                    queryIds = `idint IN(${queryIds})`;
+                    q0.push(queryIds);
+                }
+                query = `${query} AND ${q0.join(" OR ")}`;
+                let queryParams = [translator, ...books, ...ids];
+
+                console.debug("searchByIds", {query});
+                console.debug({queryParams});
+
+                let rr: Array<any> = [];
+                tx.executeSql(query, queryParams, (tx, r) => {
+                        for(let i=0; i<r.rows.length; i++) {
+                            let item = r.rows.item(i);
+                            rr.push(Object.assign({id: `${item.book}:${item.idint}`}, item));
+                        }
+                        console.debug("searchByIDs results length =>", rr.length);
+                        resolve({translations: rr, total: rr.length});
+                    },
+                    errorCB(reject));
+            })
+        })
+
+        return await q;
     }
 
     async function getByID(id: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
@@ -329,12 +361,13 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         let result = null;
         await db.transaction((tx) => {
             tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, translator, book], 
-                (tx, results) => {
-                    if (results.rows.raw.length > 0) {
-                        result = results.rows.raw[0].value;
+                (tx, r) => {
+                    if (r.rows.length > 0) {
+                        let item = r.row.item(0);
+                        result = Object.assign({id: `${item.book}:${item.idint}`}, item);
                     }
                 },
-                errorCB);
+                errorCB());
         })
         return result;
     }
@@ -350,7 +383,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                         result = results.rows.raw[0].value;
                     }
                 },
-                errorCB);
+                errorCB());
         })
         return result;
     }
@@ -359,6 +392,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     return api;
 }
 
-const errorCB = (err) => {
+const errorCB = (cb = (e) => {}) => (err) => {
     console.error('error:', err)
+    cb && cb(err)
  }

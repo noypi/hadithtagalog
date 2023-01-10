@@ -1,10 +1,10 @@
 import * as React from 'react';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Text as RNText} from 'react-native';
 import { Avatar, Button, Card, Title, Paragraph, IconButton, Text, Chip } from 'react-native-paper';
 import HighlightText from '@sanar/react-native-highlight-text';
 
 const TextComponent = (props) => {
-    return (<Text {...props} selectable={true} variant="bodyLarge"></Text>)
+    return (<Text {...props} variant="bodyLarge"></Text>)
 }
 
 const LeftContent = props => <Avatar.Icon {...props} icon="mosque" />
@@ -19,7 +19,7 @@ export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle,
         <HighlightText
             textComponent={TextComponent}
             highlightStyle={styles.highlighted}
-            searchWords={highlights.filter(v => (/^[a-z0-9]+$/i).test(v))}
+            searchWords={highlights}
             textToHighlight={content}
             />
       </Paragraph>

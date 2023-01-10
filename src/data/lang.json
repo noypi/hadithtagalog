@@ -11,6 +11,14 @@
         "eng": "Hadith Search Results",
         "fil": "Mga Nahanap na Hadith"
     },
+    SEARCH_IDS_RESULT_MESSAGE: {
+        "eng": "Hadith IDs found",
+        "fil": "May nakitang ID ng Hadith"
+    },
+    SEARCH_ZERO_RESULT_MESSAGE: {
+        "eng": "No Hadith found.",
+        "fil": "Walang nakitang Hadith."
+    },
     SEARCH_FAVORITES_RESULT_MESSAGE: {
         "eng": "Favorites Hadith",
         "fil": "Mga Paboritong Hadith"
