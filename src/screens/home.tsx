@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton } from 'react-native-paper';
 import {hadithSectionInfoOf, bookNameOf} from '@data';
-import {openHadithsDb, QUERY_STEP} from '@lib';
+import {QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
 import {HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog} from './components';
@@ -11,10 +11,6 @@ const CATEGORY = "category";
 const FAVORITES = "favorites";
 const TAGS = "tags";
 
-const FIRSTRUN_KEY = '/config/firstrun';
-
-let dbfil;
-openHadithsDb('hadiths.db').then(db => dbfil = db);
 
 export const HomeScreen = () => {
     const theme = useAppTheme();
@@ -40,6 +36,7 @@ export const HomeScreen = () => {
     const [resultGen, setResultGen] = React.useState({next: () => ({value:[], done: true})});
     const [resultHeader, setResultHeader] = React.useState("");
     const [resultHeaderError, setResultHeaderError] = React.useState("");
+    const [isLightMode, setIsLightMode] = React.useState(!$$isDarkMode);
 
     const isLocaleFil = () => $$LOCALE  === 'fil';
     const isCategorySearch = () => searchType == CATEGORY;
@@ -76,12 +73,12 @@ export const HomeScreen = () => {
         let matchIds = words.filter(w => Number.isInteger(parseInt(w)));
         let matchContent = searchQuery;
 
-        const qSearchByIds = matchIds.length > 0 ? dbfil?.searchByIDs([], matchIds) : Promise.resolve([]);
+        const qSearchByIds = matchIds.length > 0 ? $$db?.searchByIDs([], matchIds) : Promise.resolve([]);
         // match 
         //  - integer ids on search bar
         //  - hadith content
         //  - selected categories on search
-        let rg = await dbfil?.search({matchContent, selected: isCategorySearch() ? selectedCategories : null});
+        let rg = await $$db?.search({matchContent, selected: isCategorySearch() ? selectedCategories : null});
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
@@ -144,7 +141,7 @@ export const HomeScreen = () => {
         setIsSearching(true);
         setHadithsTotal(0);
 
-        let rg = await dbfil?.getSelectedRanges(selected)
+        let rg = await $$db?.getSelectedRanges(selected)
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
@@ -189,7 +186,7 @@ export const HomeScreen = () => {
     }
 
     const updateKnownTags = async (sortfn:(a:string, b:string) => void = () => {}) => {
-        let tags = await dbfil.getTags();
+        let tags = await $$db.getTags();
         console.debug("updateKnownTags", {tags});
         tags = tags.sort();
         setKnownTags(tags.sort(sortfn));
@@ -210,8 +207,8 @@ export const HomeScreen = () => {
         if (tag.length == 0) {return}
 
         isSelected ? 
-            await dbfil.addHadithTag(hadithId, tag) :
-            await dbfil.removeHadithTag(hadithId, tag);
+            await $$db.addHadithTag(hadithId, tag) :
+            await $$db.removeHadithTag(hadithId, tag);
     }
 
     const onHadithTagsSelected = async (selected) => {
@@ -230,7 +227,7 @@ export const HomeScreen = () => {
 
         setIsSearching(true);
         setHadithsTotal(0);
-        let rg = await dbfil.getTagged(selected);
+        let rg = await $$db.getTagged(selected);
         setResultGen(rg);
         let y = await rg.next();
         //console.debug("onTagsSelected", {y});
@@ -250,13 +247,13 @@ export const HomeScreen = () => {
 
     const onDeleteTag = async (tag) => {
         console.debug("onDeleteTag", {tag});
-        await dbfil.delTagAndUnTagHadiths(tag);
+        await $$db.delTagAndUnTagHadiths(tag);
         await updateKnownTags();
     }
 
     const onNewTag = async (tag) => {
         console.debug("onNewTag", {tag});
-        if (await dbfil.newTag(tag)) {
+        if (await $$db.newTag(tag)) {
             await updateKnownTags();
         } else {
             console.warn("tag not added");
@@ -264,7 +261,7 @@ export const HomeScreen = () => {
     }
 
     const onShowTagHadithModal = async (id) => {
-        let tags: Array<string> = await dbfil.getHadithTags(id);
+        let tags: Array<string> = await $$db.getHadithTags(id);
         console.debug("onShowTagHadithModal", {tags});
         // pass sortfn to place selected first in order
         await updateKnownTags((a:string, b:string) => tags.indexOf(a)<0 ? 1 : tags.indexOf(b)<0? -1 : a.localeCompare(b));
@@ -278,7 +275,7 @@ export const HomeScreen = () => {
         if (!isFavoritesSearch()) {
             setIsSearching(true);
             setHadithsTotal(0);
-            let rg = await dbfil.getFavorites();
+            let rg = await $$db.getFavorites();
             setResultGen(rg);
             let y = await rg.next();
             setIsResultGenDone(y.done);
@@ -301,12 +298,12 @@ export const HomeScreen = () => {
     }
 
     const onAddFavorite = async (id) => {
-        await dbfil.addFavorite(id);
+        await $$db.addFavorite(id);
         setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: true}));
     }
 
     const onRemoveFavorite = async (id) => {
-        await dbfil.removeFavorite(id);
+        await $$db.removeFavorite(id);
         setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: false}));
     }
 
@@ -377,10 +374,6 @@ export const HomeScreen = () => {
                                 onPress={() => {global.$$LOCALE = 'eng'; setShowMenu(false)}}
                             />
                             <Text variant="labelLarge">{$MENU_ENG}</Text>
-                        </View>
-                        <Divider />
-                        <View style={styles.menuItemContainer}>
-                            <Switch value={true} onValueChange={()=>{}} /><Text variant="labelLarge">{$MENU_DARK}</Text>
                         </View>
                     </Menu>
                 </Surface>

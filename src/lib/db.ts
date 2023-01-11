@@ -355,20 +355,27 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         return await q;
     }
 
-    async function getByID(id: string) {
+    async function getByID(id: string, lang: string = $$LOCALE) {
+        //console.debug("getByID", {id, lang});
         let [book, idint] = splitHadithId(id);
-        let result = null;
-        await db.transaction((tx) => {
-            tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, getTranslator(), book], 
-                (tx, r) => {
-                    if (r.rows.length > 0) {
-                        let item = r.row.item(0);
-                        result = Object.assign({id: `${item.book}:${item.idint}`}, item);
-                    }
-                },
-                errorCB());
+        const q = new Promise((resolve, reject) => {
+            db.transaction((tx) => {
+                tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, getTranslator(lang), book], 
+                    (tx, r) => {
+                        console.debug("getByID r=>", {r});
+                        if (r.rows.length > 0) {
+                            let item = r.rows.item(0);
+                            //console.debug("getByID", {item});
+                            let result = Object.assign({id: `${item.book}:${item.idint}`}, item);
+                            resolve(result);
+                        } else {
+                            reject();
+                        }
+                    },
+                    errorCB(reject));
+            })
         })
-        return result;
+        return await q;
     }
 
     async function setContent(id: string, content: string) {

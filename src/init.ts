@@ -1,11 +1,16 @@
 import {Appearance, LogBox} from 'react-native';
-import {splitHadithId, bookOf, idOf} from '@lib';
+import {splitHadithId, bookOf, idOf, openHadithsDb} from '@lib';
 import {greenTheme, greenDarkTheme} from '@data/theme';
 import { localeDefineProperties } from './data/locale';
 
 console.debug("initializing polyfills...");
 
+let dbfil;
+openHadithsDb('hadiths.db').then(db => dbfil = db);
+
 const isDarkModeFn = () => Appearance.getColorScheme() == 'dark';
+
+global.$$isDarkModeLocal = null;
 
 Object.defineProperties(global, {
     "splitHadithId": {
@@ -21,11 +26,14 @@ Object.defineProperties(global, {
         writable: false
     },
     "useAppTheme": {
-        value: () => isDarkModeFn() ? greenDarkTheme : greenTheme,
+        value: () => $$isDarkMode ? greenDarkTheme : greenTheme,
         writable: false
     },
     "$$isDarkMode": {
-        get: isDarkModeFn
+        get: () => ($$isDarkModeLocal == null) ? isDarkModeFn() : $$isDarModeLocal
+    },
+    "$$db": {
+        get: () => dbfil
     }
 });
 

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "hadiths",
-    "slug": "hadiths",
+    "name": "7K Sahih Tagalog Hadiths",
+    "slug": "SahihTagalogHadiths",
     "version": "1.0.0",
     "assetBundlePatterns": [
       "**/*"
     ]
   },
-  "name": "hadiths"
+  "name": "7K Sahih Tagalog Hadiths"
 }

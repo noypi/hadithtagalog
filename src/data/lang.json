@@ -1,4 +1,8 @@
 {
+    SCREEN_READMORE_TITLE: {
+        "eng": "Read another language",
+        "fil": "Magbasa sa ibang wika"
+    },
     SEARCH_PLACEHOLDER: {
         "eng": "...Search for Hadiths",
         "fil": "...Maghanap ng Hadith"
@@ -102,5 +106,9 @@
     MENU_LIGHT: {
         "eng": "Light",
         "fil": "Liwanag"
+    },
+    TOAST_COPIED: {
+        "eng": "Copied!",
+        "fil": "Nakopya na!"
     }
 }
