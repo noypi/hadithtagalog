@@ -1,37 +1,59 @@
-export const SECTION_NAME  = 0;
-export const SECTION_FIRST = 1;
-export const SECTION_LAST  = 2;
+export const SECTION_FIRST = 0;
+export const SECTION_LAST  = 1;
 
-export const bukhariSections = require("./bukhari-sections.json");
-export const bukhariSectionsList = Object.values(bukhariSections).sort((a,b) => a[SECTION_FIRST] > b[SECTION_FIRST]);
+const bukhariSectionsOffset = require("./bukhari-sections.json");
+const bukhariSectionName_tagalog = require("./bukhari-sections-name_tagalog.json");
+const bukhariSectionName_english = require("./bukhari-sections-name_english.json");
+const bukhariSectionsOffsetSorted = Object.values(bukhariSectionsOffset).sort((a,b) => a[SECTION_FIRST] > b[SECTION_FIRST]);
 
-const hadithInfo = require("./hadithInfo.json");
+const bookname = require("./bookname.json");
 
-export const books2Sections = {
-    "bukhari": bukhariSections,
-    "bukhari-list": bukhariSectionsList
+const booksSectionsOffset = {
+    "bukhari": bukhariSectionsOffsetSorted
 }
 
-export const bookNameOf = (book) => hadithInfo[book]["metadata"].name;
+export const books2SectionName = {
+    "bukhari": {
+        "fil": bukhariSectionName_tagalog,
+        "eng": bukhariSectionName_english
+    }
+}
 
-export const hadithSectionListOf = (book) => books2Sections[book+'-list'];
+export const bookNameOf = (book) => bookname[book];
 
-export const hadithSectionOf = (hadithId) => {
-    const [book, id] = splitHadithId(hadithId);
-
-    const sections = books2Sections[book+'-list'];
-    for (let i=0; i<sections.length; i++) {
-        let item = sections[i];
+const hadithSectionIdOf = (book, id) => {
+    //console.debug("hadithSectionIdOf", {book, id});
+    const ls = booksSectionsOffset[book];
+    //console.debug({ls});
+    for (let i=0; i<ls.length; i++) {
+        let item = ls[i];
         if (item[SECTION_FIRST]<= id && id <= item[SECTION_LAST]) {
-            return {
-                title: item[SECTION_NAME],
-                id: i+1
-            }
+            return i+1
         }
     }
+    return 0
+}
+
+export const hadithSectionOffsets = (book) => booksSectionsOffset[book];
+
+export const hadithSectionNameOf = (book, sectionId, lang = $$LOCALE) => {
+    //console.debug("hadithSectionNameOf", {book, sectionId, lang});
+    const bynames = books2SectionName[book][lang];
+    //console.debug({bynames});
+    return bynames[sectionId];
+}
+
+export const hadithSectionInfoOf = (hadithId, lang = $$LOCALE) => {
+    const [book, id] = splitHadithId(hadithId);
+
+    const bynames = books2SectionName[book][lang];
+    
+    const sectionId = hadithSectionIdOf(book, id);
+    const title = hadithSectionNameOf(book, sectionId);
+
     return {
-        title: "",
-        id: 0
+        title,
+        id: sectionId
     }
 }
 
@@ -72,22 +94,18 @@ export const deleteFromFilterReadyFormat = (obj: any, book: string, sectionId: n
 
 function validateSection(section) {
     if (!Array.isArray(section)) {
-        throw "invalid section type";
+        throw "validateSection(), invalid section type";
     }
 
-    if (section.length != 3) {
-        throw "invalid section length";
+    if (section.length != 2) {
+        throw "validateSection(), invalid section length";
     }
 
-    if (typeof(section[0]) != 'string') {
-        throw "invalid 1st section item";
+    if (typeof(section[0]) != 'number') {
+        throw "validateSection(), invalid 2nd section item";
     }
 
     if (typeof(section[1]) != 'number') {
-        throw "invalid 2nd section item";
-    }
-
-    if (typeof(section[2]) != 'number') {
-        throw "invalid 3rd section item";
+        throw "validateSection(), invalid 3rd section item";
     }
 }

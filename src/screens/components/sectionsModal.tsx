@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { StyleSheet, FlatList } from 'react-native';
-import { Modal, Portal, Text, Checkbox, IconButton, Surface} from 'react-native-paper';
+import { Modal, Portal, Text, Checkbox, IconButton, Surface, Title} from 'react-native-paper';
 
-import {SECTION_NAME, hadithSectionListOf, pushFilterReadyFormat, deleteFromFilterReadyFormat} from '@data';
+import {hadithSectionNameOf, hadithSectionOffsets, pushFilterReadyFormat, deleteFromFilterReadyFormat, bookNameOf} from '@data';
 
-const TitledItem = ({item, index, onPress}) => {
+const TitledItem = ({item, index, onPress, book}) => {
     const [isSelected, setIsSelected] = React.useState(false);
     const {colors} = useAppTheme();
 
@@ -22,13 +22,13 @@ const TitledItem = ({item, index, onPress}) => {
                 }}
                 styles={styles.checkbox}
             />
-        <Text style={styles.itemStyle} key={index}>{index+1}.  {item[SECTION_NAME]}</Text>
+        <Text style={styles.itemStyle} key={index}>{index+1}.  {hadithSectionNameOf(book, index+1)}</Text>
     </Surface>);
 }
 
 export const SectionsModal = ({visible, onDismiss, containerStyle, book}) => {
     const {colors} = useAppTheme();
-    const books = hadithSectionListOf(book);
+    const books = hadithSectionOffsets(book);
     const [selectedItems, setSelectedItems] = React.useState(new Array(books.length).fill(false));
 
     const styles = makeStyles(colors);
@@ -53,7 +53,7 @@ export const SectionsModal = ({visible, onDismiss, containerStyle, book}) => {
     };
 
     const renderTitles = (v) => {
-        return <TitledItem {...v} onPress={onCheckedItem} />
+        return <TitledItem {...v} book={book} onPress={onCheckedItem} />
     }
 
  return (
@@ -66,7 +66,7 @@ export const SectionsModal = ({visible, onDismiss, containerStyle, book}) => {
             style={{height: '100%'}}>
             <Surface style={styles.modalViewContainerStyle}>
                 <Surface elevation="3" style={styles.titleContainerStyle}>
-                    <Text style={[styles.titleStyle, {flex: 1, textAlign: 'center'}]}>{book} Sections</Text>
+                    <Title style={[styles.titleStyle, {flex: 1, textAlign: 'center'}]}>{$CATEGORIES}{'\n'}{bookNameOf(book)}</Title>
                     <IconButton style={{backgroundColor: 'white', color: colors.primary}} 
                             icon="check-outline"
                             onPress={onDismissModal} 

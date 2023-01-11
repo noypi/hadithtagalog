@@ -4,7 +4,7 @@ import SQLite from 'react-native-sqlite-storage';
 import {SECTION_FIRST, SECTION_LAST} from '@data';
 import { splitHadithId } from './data';
 
-const DEFAULT_TAGALOG_TRANSLATOR = "google_tl";
+const getTranslator = (lang = $$LOCALE) => ({'fil': 'google_tl', 'eng': 'srceng'}[lang]);
 export const QUERY_STEP = 25;
 
 export const openHadithsDb: any = async (name: string, readOnly: boolean = false) => {
@@ -195,11 +195,11 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         return await q;
     }
 
-    async function getTagged(tags: Array<string>, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+    async function getTagged(tags: Array<string>) {
         let prepareTags = new Array(tags.length).fill('?').join(' ');
         let query = "SELECT * FROM translations LEFT JOIN tags ON tags.hadiths_meta_rowid = translations.hadiths_meta_rowid "+
                     `WHERE tag IN (${prepareTags}) AND translator = ?`;
-        return await executeSql(query, [...tags, translator], errorCB());
+        return await executeSql(query, [...tags, getTranslator()], errorCB());
     }
 
     async function addFavorite(hadithid: string) {
@@ -223,9 +223,9 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         });
     }
 
-    async function getFavorites(translator = DEFAULT_TAGALOG_TRANSLATOR) {
+    async function getFavorites() {
         let query = "SELECT * FROM translations WHERE hadiths_meta_rowid IN (SELECT hadiths_meta_rowid FROM favorites) AND translator = ?";
-        return await executeSql(query, [translator], errorCB());
+        return await executeSql(query, [getTranslator()], errorCB());
     }
 
     async function getRange(book: string, ranges: Array<any> = []) {
@@ -243,8 +243,8 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             return prev;
         }, [ranges[0]]);
         console.debug("getrange reduced ", {ranges});
-        let {query, queryParams} = constructQueryRanges("SELECT * FROM translations WHERE", {book, ranges});
-        return await executeSql(query, queryParams, errorCB());
+        let {query, queryParams} = constructQueryRanges("SELECT * FROM translations WHERE translator = ? AND", {book, ranges});
+        return await executeSql(query, [getTranslator(), ...queryParams], errorCB());
     }
 
     async function getSelectedRanges(selected) {
@@ -287,11 +287,10 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             return
         }
 
-        let query = "SELECT * FROM translations WHERE";
+        let query = "SELECT * FROM translations WHERE translator = ? AND";
         let q0a = "(content MATCH ?)";
-        let queryParams;
         query =  `${query} (${q0a})`;
-        queryParams = [matchContent];
+        let queryParams = [getTranslator(), matchContent];
         
 
         // append selected sections to query
@@ -316,7 +315,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         return await executeSql(query, queryParams, errorCB());
     }
 
-    async function searchByIDs(books: Array<string>, ids, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+    async function searchByIDs(books: Array<string>, ids) {
         if (books.length == 0 && ids.length == 0) {
             return [];
         }
@@ -335,7 +334,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                     q0.push(queryIds);
                 }
                 query = `${query} AND ${q0.join(" OR ")}`;
-                let queryParams = [translator, ...books, ...ids];
+                let queryParams = [getTranslator(), ...books, ...ids];
 
                 console.debug("searchByIds", {query});
                 console.debug({queryParams});
@@ -356,11 +355,11 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         return await q;
     }
 
-    async function getByID(id: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+    async function getByID(id: string) {
         let [book, idint] = splitHadithId(id);
         let result = null;
         await db.transaction((tx) => {
-            tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, translator, book], 
+            tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, getTranslator(), book], 
                 (tx, r) => {
                     if (r.rows.length > 0) {
                         let item = r.row.item(0);
@@ -372,12 +371,12 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         return result;
     }
 
-    async function setContent(id: string, content: string, translator: string = DEFAULT_TAGALOG_TRANSLATOR) {
+    async function setContent(id: string, content: string) {
         let [book, idint] = splitHadithId(id);
         let result = null;
 
         await db.transaction((tx) => {
-            tx.executeSql('SELECT * FROM hadiths_index WHERE id = ? AND translator = ?', [id, translator], 
+            tx.executeSql('SELECT * FROM hadiths_index WHERE id = ? AND translator = ?', [id, getTranslator()], 
                 (tx, results) => {
                     if (results.rows.raw.length > 0) {
                         result = results.rows.raw[0].value;

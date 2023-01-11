@@ -58,5 +58,49 @@
     TAG_SEARCH_MODAL_TITLE: {
         "eng": "Search from Tags",
         "fil": "Maghanap galing sa Tags"
+    },
+    CATEGORIES: {
+        "eng": "Categories",
+        "fil": "Mga Kategorya"
+    },
+    REMINDERS_TITLE: {
+        "eng": "Reminders",
+        "fil": "Mga Paalala"
+    },
+    REMINDERS_CONTENT: {
+        "eng": 'Tagalog Hadiths is translated by Google Translate. For corrections please visit "Hadith Tagalog App" Facebook Group.',
+        "fil": 'Ang mga tagalog na Hadith ay isinalin ng Google Translate. Para sa mga pagwawasto mangyaring bisitahin ang "Hadith Tagalog App" Facebook Group.'
+    },
+    REMINDERS_ACTION_TEXT: {
+        "eng": "OK",
+        "fil": "OK"
+    },
+    SEGBUTTONS_CATEGORY: {
+        "eng": "Category",
+        "fil": "Kategorya"
+    },
+    SEGBUTTONS_FAVORITES: {
+        "eng": "Favorites",
+        "fil": "Paborito"
+    },
+    SEGBUTTONS_TAGS: {
+        "eng": "Tags",
+        "fil": "Tags"
+    },
+    MENU_FIL: {
+        "eng": "tagalog",
+        "fil": "tagalog"
+    },
+    MENU_ENG: {
+        "eng": "eng",
+        "fil": "eng"
+    },
+    MENU_DARK: {
+        "eng": "Dark",
+        "fil": "Madilim"
+    },
+    MENU_LIGHT: {
+        "eng": "Light",
+        "fil": "Liwanag"
     }
 }

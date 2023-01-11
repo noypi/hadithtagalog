@@ -1,28 +1,42 @@
 import * as React from 'react';
-import {StyleSheet, Text as RNText} from 'react-native';
-import { Avatar, Button, Card, Title, Paragraph, IconButton, Text, Chip } from 'react-native-paper';
-import HighlightText from '@sanar/react-native-highlight-text';
+import {StyleSheet, View} from 'react-native';
+import { Avatar, Button, Card, Title, Paragraph, IconButton, Text, Chip, Surface } from 'react-native-paper';
+import {HighlightText} from './highlightText';
 
-const TextComponent = (props) => {
-    return (<Text {...props} variant="bodyLarge"></Text>)
+const TextComponent = ({children}) => {
+    const {colors} = useAppTheme();
+    const styles = makeStyles(colors);
+    return (<Text 
+                 style={styles.normalText}
+                 variant="bodyMedium">{children}</Text>)
+}
+
+const HighlightComponent = ({children}) => {
+    const {colors} = useAppTheme();
+    const styles = makeStyles(colors);
+    return (<Text
+                style={styles.highlighted} 
+                variant="bodyMedium">{children}</Text>)
 }
 
 const LeftContent = props => <Avatar.Icon {...props} icon="mosque" />
 
 export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle, highlights, onAddFavorite, onRemoveFavorite, onTagHadith}) => {
     const {colors} = useAppTheme();
+    const styles = makeStyles(colors);
   return (<Card>
     <Card.Title title={title} subtitle={subtitle} left={LeftContent} />
     <Card.Content>
-      <Title>{cardTitle}</Title>
-      <Paragraph style={styles.paragraph}>
-        <HighlightText
-            textComponent={TextComponent}
-            highlightStyle={styles.highlighted}
-            searchWords={highlights}
-            textToHighlight={content}
-            />
-      </Paragraph>
+        <Title>{cardTitle}</Title>
+        <Paragraph>
+            <HighlightText
+                textComponent={TextComponent}
+                highlightComponent={HighlightComponent}
+                highlightStyle={styles.highlighted}
+                searchWords={highlights}
+                textToHighlight={content}
+                />
+        </Paragraph>
     </Card.Content>
     <Card.Actions>
         {isFavorite ?
@@ -34,11 +48,13 @@ export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle,
   </Card>)
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors) => StyleSheet.create({
     highlighted: {
-      backgroundColor: 'yellow'
+        backgroundColor: 'yellow',
+        color: 'black',
+    },
+    normalText: {
     },
     paragraph: {
-        fontSize: 16
     }
 });

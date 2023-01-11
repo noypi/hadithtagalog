@@ -163,3 +163,11 @@ CREATE TRIGGER IF NOT EXISTS translations_delete INSTEAD OF DELETE ON translatio
     END;
 
 COMMIT;
+
+
+DROP TABLE IF EXISTS kv;
+CREATE TABLE kv (
+	k	TEXT NOT NULL,
+    v   TEXT,
+	PRIMARY KEY(k)
+);

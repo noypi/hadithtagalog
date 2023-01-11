@@ -1,15 +1,17 @@
 import React from 'react';
 import {StyleSheet, FlatList, View} from 'react-native';
-import { Searchbar, ActivityIndicator, Surface, Text, Checkbox, SegmentedButtons, Title } from 'react-native-paper';
-import {hadithBooks, hadithSectionOf, bookNameOf} from '@data';
+import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton } from 'react-native-paper';
+import {hadithSectionInfoOf, bookNameOf} from '@data';
 import {openHadithsDb, QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
-import {HadithCard, SectionsModal, TagsModal, SectionsSurface} from './components';
+import {HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog} from './components';
 
 const CATEGORY = "category";
 const FAVORITES = "favorites";
-const TAGS = "tags"
+const TAGS = "tags";
+
+const FIRSTRUN_KEY = '/config/firstrun';
 
 let dbfil;
 openHadithsDb('hadiths.db').then(db => dbfil = db);
@@ -25,6 +27,8 @@ export const HomeScreen = () => {
     const [showSectionModal, setShowSectionModal] = React.useState(false);
     const [showTagsModal, setShowTagsModal] = React.useState(false);
     const [showHadithTagsModal, setShowHadithTagsModal] = React.useState(false);
+    const [showRemindersDialog, setShowRemindersDialog] = React.useState(true);
+    const [showMenu, setShowMenu] = React.useState(false);
     const [hadithIdToTag, setHadithIdToTag] = React.useState("");
     const [tagsOfHadithIdToTag, setTagsOfHadithIdToTag] = React.useState([]);
     const [knownTags, setKnownTags] = React.useState([]);
@@ -37,10 +41,14 @@ export const HomeScreen = () => {
     const [resultHeader, setResultHeader] = React.useState("");
     const [resultHeaderError, setResultHeaderError] = React.useState("");
 
+    const isLocaleFil = () => $$LOCALE  === 'fil';
     const isCategorySearch = () => searchType == CATEGORY;
     const isFavoritesSearch = () => searchType == FAVORITES;
     const isTagsSearch = () => searchType == TAGS;
     const searchWords = () => searchQuery.split(" ").filter(word => word.length > 0);
+
+    // React.useEffect(() => {
+    // }, [showMenu])
 
     const onBeforePressSearchType = () => {
         setResultHeaderError("");
@@ -318,7 +326,7 @@ export const HomeScreen = () => {
         const cardTitle = (atColon>0) ? text.slice(0, atColon) : "";
         const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
         const highlights = highlightWords.filter(v => (/^[a-z0-9]+$/i).test(v));
-        const sectionInfo = hadithSectionOf(item.id);
+        const sectionInfo = hadithSectionInfoOf(item.id);
         const isFavorite = item.id in favoritesLocal ? favoritesLocal[item.id] : !!item.favorite_id;
         const props = {
             onAddFavorite,
@@ -339,9 +347,9 @@ export const HomeScreen = () => {
     return (
         <ScreenWrapper>
             <Surface elevation="2">
-                <Surface>
+                <Surface  style={{flexDirection: 'row'}}>
                     <Searchbar
-                        style={styles.searchbar}
+                        style={[styles.searchbar, {flex:6}]}
                         placeholder={isCategorySearch() ? $SEARCH_CATEGORY_PLACEHOLDER : $SEARCH_PLACEHOLDER}
                         onChangeText={onChangeSearch}
                         onIconPress={onSearch}
@@ -349,15 +357,40 @@ export const HomeScreen = () => {
                         value={searchQuery}
                         loading={isSearching}
                         placeholderTextColor="rgba(84, 99, 77, 0.55)"
-                    />
+                    />                    
+                    <Menu
+                        visible={showMenu}
+                        onDismiss={() => setShowMenu(false)}
+                        anchor={<IconButton icon="menu" mode="flat" onPress={() => setShowMenu(true)}>Show menu</IconButton>}>
+                        <View style={styles.menuItemContainer}>
+                            <RadioButton
+                                value={'filipino'}
+                                status={ isLocaleFil() ? 'checked' : 'unchecked' }
+                                onPress={() => {global.$$LOCALE = 'fil'; setShowMenu(false)}}
+                            />
+                            <Text variant="labelLarge">{$MENU_FIL}</Text>
+                        </View>
+                        <View style={styles.menuItemContainer}>
+                            <RadioButton
+                                value={'filipino'}
+                                status={ !isLocaleFil() ? 'checked' : 'unchecked' }
+                                onPress={() => {global.$$LOCALE = 'eng'; setShowMenu(false)}}
+                            />
+                            <Text variant="labelLarge">{$MENU_ENG}</Text>
+                        </View>
+                        <Divider />
+                        <View style={styles.menuItemContainer}>
+                            <Switch value={true} onValueChange={()=>{}} /><Text variant="labelLarge">{$MENU_DARK}</Text>
+                        </View>
+                    </Menu>
                 </Surface>
                 <SegmentedButtons
                         value={searchType}
                         onValueChange={v => setSearchType(v==searchType ? "" : v)}
                         buttons={[
-                        { value: CATEGORY, label: 'Kategorya', icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true},
-                        { value: FAVORITES, label: 'Paborito', icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true},
-                        { value: TAGS, label: 'Tags', icon: 'tag-outline', onPress: onPressTags, showSelectedCheck: true },
+                        { value: CATEGORY, label: $SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true},
+                        { value: FAVORITES, label: $SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true},
+                        { value: TAGS, label: $SEGBUTTONS_TAGS, icon: 'tag-outline', onPress: onPressTags, showSelectedCheck: true },
                         ]}
                     />
                 {(resultHeaderError.length > 0) ? 
@@ -375,6 +408,7 @@ export const HomeScreen = () => {
                         book="bukhari"
                         onPressItem={onCategoriesSelected} /> : null
                 }
+
             <FlatList
                 data={["start", ...hadiths, "end"]}
                 keyExtractor={(item, i) => i}
@@ -406,6 +440,14 @@ export const HomeScreen = () => {
                 onAddTag={onNewTag}
                 onDismiss={onHadithTagsSelected} 
                 onToggleItem={onToggleHadithTag}/>
+            <PopupDialog 
+                title={$REMINDERS_TITLE}
+                content={$REMINDERS_CONTENT}
+                actionText={$REMINDERS_ACTION_TEXT}
+                onAction={() => setShowRemindersDialog(false)}
+                onDismiss={() => setShowRemindersDialog(false)}
+                visible={showRemindersDialog}
+            />
         </ScreenWrapper>
     );
 };
@@ -442,5 +484,10 @@ const makeStyles = (colors) => StyleSheet.create({
     },
     resultHeaderOk: {
         backgroundColor: colors.primaryContainer,
+    }, 
+    menuItemContainer: {
+        justifyContent:'flex-start', 
+        flexDirection: 'row', 
+        alignItems: 'center'
     }
 });
