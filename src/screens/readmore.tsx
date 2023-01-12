@@ -65,25 +65,9 @@ export const ReadMoreScreen = ({navigation, route}) => {
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 
                     onPress={() => {
-                        Clipboard.setString(`${translation.title}:\n${translation.content}\n\n${subtitle}`);
+                        Clipboard.setString(`${translation.title}:\n${translation.content}\n\n${translation.bookref}`);
                         ToastAndroid.show($TOAST_COPIED, ToastAndroid.SHORT);
                     }}/>
-
-                {isFavorite ?
-                    (<IconButton icon="star-minus" 
-                                    iconColor="gold" 
-                                    mode="flat" 
-                                    onPress={async () => {
-                                    isFavorite && await $db.removeFavorite(id)
-                                    setIsFavorite(!isFavorite);
-                                    }} />) :
-                    (<Chip icon="star-plus-outline" 
-                            onPress={async () => {
-                                !isFavorite && await $$db.addFavorite(id)
-                                setIsFavorite(isFavorite);
-                            }} 
-                            mode="flat" elevation="2">{$SEGBUTTONS_FAVORITES}</Chip>)
-                }
             </View>
         </ScreenWrapper>
     );

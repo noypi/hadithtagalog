@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { StyleSheet, FlatList } from 'react-native';
-import { Modal, Portal, Text, Checkbox, IconButton, Surface, Title, TextInput} from 'react-native-paper';
+import { Modal, Portal, Text, Checkbox, IconButton, Surface, Title, TextInput, Linking, Button} from 'react-native-paper';
 
 
 const TitledItem = ({item, index, onPress, checked, onDeleteTag}) => {
@@ -107,11 +107,10 @@ export const TagsModal = ({title, tags, visible, onDismiss, onAddTag, containerS
                         onSubmitEditing={onAddTagLocal}
                         onChangeText={setInputValue}
                         value={inputValue}
-                        label="Bagong Tag"
-                        placeholder="Gumawa ng bagong Tag"
-                        placeholderTextColor="rgba(84, 99, 77, 0.65)"
+                        label={$TAG_INPUT_NEW_LABEL}
+                        placeholder={$TAG_INPUT_NEW_PLACEHOLDER}
                         mode="flat"
-                        styles={styles.inputTagStyle}
+                        style={styles.inputTagStyle}
                         right={<TextInput.Icon icon="tag-plus" onPress={onAddTagLocal}/>}
                         />
                 </Surface>

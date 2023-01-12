@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, FlatList, View} from 'react-native';
+import {StyleSheet, FlatList, View, Linking} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton } from 'react-native-paper';
 import {hadithSectionInfoOf, bookNameOf} from '@data';
 import {QUERY_STEP} from '@lib';
@@ -10,6 +10,8 @@ import {HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog} from
 const CATEGORY = "category";
 const FAVORITES = "favorites";
 const TAGS = "tags";
+
+const FBGGROUP = "https://web.facebook.com/groups/833486274413858";
 
 
 export const HomeScreen = () => {
@@ -353,7 +355,6 @@ export const HomeScreen = () => {
                         onSubmitEditing={onSubmitEditing}
                         value={searchQuery}
                         loading={isSearching}
-                        placeholderTextColor="rgba(84, 99, 77, 0.55)"
                     />                    
                     <Menu
                         visible={showMenu}
@@ -435,7 +436,7 @@ export const HomeScreen = () => {
                 onToggleItem={onToggleHadithTag}/>
             <PopupDialog 
                 title={$REMINDERS_TITLE}
-                content={$REMINDERS_CONTENT}
+                contentComponent={<><Text variant="bodyLarge">{$REMINDERS_CONTENT}</Text><Button type="text" onPress={() => Linking.openURL(FBGGROUP)}>{FBGGROUP}</Button></>}
                 actionText={$REMINDERS_ACTION_TEXT}
                 onAction={() => setShowRemindersDialog(false)}
                 onDismiss={() => setShowRemindersDialog(false)}
