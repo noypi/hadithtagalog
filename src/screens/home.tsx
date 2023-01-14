@@ -84,11 +84,11 @@ export const HomeScreen = () => {
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
-        let results = y.value;
+        let results = y?.value ?? [];
         
         let byIdsResults = await qSearchByIds;
-        let hasSearchResults = results?.translations.length ?? false;
-        let translations = [...(byIdsResults?.translations ?? []), ...(results?.translations)];
+        let hasSearchResults = results?.translations?.length > 0 ?? false;
+        let translations = [...(byIdsResults?.translations ?? []), ...(results?.translations ?? [])];
         setHadithsSafe(translations);
         setHadithsTotal(results?.total + (byIdsResults?.total ?? 0));
         setIsSearching(false);
@@ -117,7 +117,7 @@ export const HomeScreen = () => {
         console.debug("onScrollToEnd ", {done: y.done});
         setIsResultGenDone(y.done);
         if (!y.done) {
-            let results = y.value;
+            let results = y?.value ?? [];
             setHadithsSafe([...hadiths, ...results.translations]);
         }        
         setIsSearching(false);
@@ -147,11 +147,11 @@ export const HomeScreen = () => {
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
-        let results: Array<any> = y.value;
+        let results: Array<any> = y?.value ?? [];
         setHadithsSafe(results?.translations);
         setHadithsTotal(results?.total);
         setIsSearching(false);
-        if (results?.translations.length > 0) {
+        if (results?.translations?.length > 0 ?? false) {
             setResultHeader($SEARCH_CATEGORIES_RESULT_MESSAGE);
         } else {
             setSearchType("");
@@ -235,12 +235,12 @@ export const HomeScreen = () => {
         //console.debug("onTagsSelected", {y});
         setIsSearching(false);
 
-        let results = y.value;
+        let results = y?.value;
         setIsResultGenDone(y.done);
         setHadithsSafe(results?.translations);
-        setHadithsTotal(results?.total);
+        setHadithsTotal(results?.total ?? 0);
 
-        if (results?.translations.length > 0) {
+        if (results?.translations?.length > 0 ?? false) {
             setResultHeader($SEARCH_TAGS_RESULT_MESSAGE);
         } else {
             setResultHeaderError($SEARCH_TAGS_ZERO_RESULT_MESSAGE);
@@ -282,12 +282,12 @@ export const HomeScreen = () => {
             let y = await rg.next();
             setIsResultGenDone(y.done);
             //console.debug({favorites: y.value});
-            let results = y.value;
+            let results = y?.value ?? [];
             setHadithsSafe(results?.translations);
             setHadithsTotal(results?.total);
             setFavoritesLocal({});
             setIsSearching(false);
-            if (results?.translations.length > 0) {
+            if (results?.translations?.length > 0 ?? false) {
                 setResultHeader($SEARCH_FAVORITES_RESULT_MESSAGE)
             } else {
                 setResultHeaderError($SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);

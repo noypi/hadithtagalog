@@ -73,7 +73,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             let query0 = `${query} LIMIT ${step} OFFSET ${offset}`;
             console.debug({query0});
             console.debug({queryParams});
-            let q = new Promise(resolve => {
+            let q = new Promise((resolve,reject) => {
                 let q2 = new Promise(resolve2 => {
                     if (query.indexOf("SELECT * FROM translations") == 0) {
                         db.transaction(async (tx) => {
@@ -86,14 +86,15 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                                 } else {
                                     resolve2(0);
                                 }
-                            }));
+                            }), errorCB(reject));
                         })
                     } else {
                         console.debug("no total");
-                        resolve2(-1);
+                        resolve2(0);
                     }
                 })
                 db.transaction(async (tx) => {
+                    console.debug("executeSql", {query0});
                     tx.executeSql(query0, queryParams, handleResults(async r => {
                         //console.debug({r});
                         if (r.length < step) {
@@ -101,7 +102,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                         }
                         offset += QUERY_STEP;
                         resolve({translations: r, total: await q2});
-                    }));
+                    }), errorCB(reject));
                 })
             });
             let rr = await q;
@@ -117,7 +118,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             let query = "INSERT INTO tags(tag, book, idint) VALUES(?, ?, ?)";
             tx.executeSql(query, [tag, book, id], (tx, results) => {
                 //console.debug({results});
-            })
+            }, errorCB())
         });
     }
 
@@ -126,7 +127,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         db.transaction((tx) => {
             let query = "DELETE FROM tags WHERE tag = ? AND book = ? AND idint = ?";
             tx.executeSql(query, [tag, book, id], (tx, results) => {
-            })
+            }, errorCB())
         });
     }
 
@@ -138,15 +139,15 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                 console.debug("delTagAndUnTagHadiths query1", {affected: results.rowsAffected});
                 tx.executeSql(query2, [tag], (tx, results) => {
                     console.debug("delTagAndUnTagHadiths query2", {affected: results.rowsAffected});
-                })
-            })
+                }, errorCB())
+            }, errorCB())
         });
     }
 
     async function getHadithTags(hadithId: string) {
         let [book, id] = splitHadithId(hadithId);
         let query = "SELECT tag FROM tags WHERE book = ? AND idint = ?";
-        const q = new Promise(resolve => {
+        const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 let tags: Array<any> = [];
                 tx.executeSql(query, [book, id], (tx, r) => {
@@ -156,7 +157,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                         tags.push(item.tag);
                     }
                     resolve(tags);
-                });
+                }, errorCB(reject));
             });
         });
         
@@ -165,7 +166,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
     async function getTags() {
         let query = "SELECT tag from tags_list";
-        const q = new Promise(resolve => {
+        const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 let tags: Array<any> = [];
                 tx.executeSql(query, [], (tx, r) => {
@@ -175,7 +176,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                         tags.push(item.tag);
                     }
                     resolve(tags);
-                });
+                }, errorCB(reject));
             });
         });
 
@@ -184,22 +185,26 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
     async function newTag(tag: string) {
         if (tag.length == 0) {return}
-        const q = new Promise(resolve => {
+        const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 let tags: Array<any> = [];
                 tx.executeSql("INSERT INTO tags_list(tag) VALUES(?)", [tag], (tx, r) => {
                     resolve(r.rowsAffected == 1);
-                });
+                }, errorCB(reject));
             });
         })
         return await q;
     }
 
     async function getTagged(tags: Array<string>) {
-        let prepareTags = new Array(tags.length).fill('?').join(' ');
-        let query = "SELECT * FROM translations LEFT JOIN tags ON tags.hadiths_meta_rowid = translations.hadiths_meta_rowid "+
-                    `WHERE tag IN (${prepareTags}) AND translator = ?`;
-        return await executeSql(query, [...tags, getTranslator()], errorCB());
+        if (tags.length == 0) {
+            return (function*(){})();//empty generator
+        }
+        let prepareTags = new Array(tags.length).fill('?').join(',');
+        let query = "SELECT * FROM translations JOIN tags ON tags.hadiths_meta_rowid = translations.hadiths_meta_rowid "+
+                    `WHERE tag IN(${prepareTags}) AND translator = ? GROUP BY translations.hadiths_meta_rowid `+
+                    "HAVING COUNT(translations.hadiths_meta_rowid) == ?"
+        return await executeSql(query, [...tags, getTranslator(), tags.length], errorCB());
     }
 
     async function addFavorite(hadithid: string) {
@@ -219,7 +224,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         db.transaction((tx) => {
             let query = "DELETE FROM favorites_list WHERE hadiths_meta_rowid in (SELECT hadiths.metarowid FROM hadiths WHERE book = ? AND idint = ?)";
             tx.executeSql(query, [book, id], (tx, results) => {
-            })
+            }, errorCB())
         });
     }
 
@@ -276,9 +281,10 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     async function search(params) {
         let {matchContent} = params;
         if (matchContent.length == 0) {
+            console.debug("search => empty matchContent");
             return (function*(){})();//empty generator
         }
-        matchContent = matchContent.split(" ").join("* ") + "*";
+        matchContent = "*"+ matchContent.split(" ").join("* *") + "*";
 
         if (matchContent.trim().length == 0) {
             if (!!params.selected) {
