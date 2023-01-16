@@ -343,6 +343,8 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    implementation fileTree(dir: '../../node_modules/react-native-sqlite-storage/platforms/android-native/build/outputs/**/*', include: ['*.aar'])
 }
 
 if (isNewArchitectureEnabled()) {

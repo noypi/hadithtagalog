@@ -1,0 +1,3 @@
+[submodule "patch/srclibs/Android-sqlite-connector"]
+	path = patch/srclibs/Android-sqlite-connector
+	url = https://github.com/liteglue/Android-sqlite-connector
