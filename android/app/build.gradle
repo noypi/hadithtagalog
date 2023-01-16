@@ -143,6 +143,10 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
     defaultConfig {
         applicationId "com.hadiths"
         minSdkVersion rootProject.ext.minSdkVersion
