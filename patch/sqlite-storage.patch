@@ -1,8 +1,9 @@
---- ../node_modules/react-native-sqlite-storage/platforms/android-native/gradle.properties	2023-01-17 05:39:15.689794356 +0800
-+++ gradle.properties	2023-01-16 23:33:13.547104129 +0800
-@@ -14,3 +14,4 @@
- # org.gradle.parallel=true
- #Mon Nov 16 12:00:58 EST 2015
- android.useDeprecatedNdk=true
-+android.jetifier.ignorelist=sqlite-connector.jar
-\ No newline at end of file
+--- ../node_modules/react-native-sqlite-storage/platforms/android-native/build.gradle	2023-01-16 22:34:22.657999000 +0800
++++ build.gradle	2023-01-17 06:15:49.995830338 +0800
+@@ -44,5 +44,5 @@
+ 
+ dependencies {
+     implementation 'com.facebook.react:react-native:+'
+-    implementation files('libs/sqlite-connector.jar')
++    //implementation files('libs/sqlite-connector.jar')
+ }
