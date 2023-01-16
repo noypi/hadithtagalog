@@ -138,10 +138,16 @@ def reactNativeArchitectures() {
     return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
+apply plugin: 'kotlin-android'
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
     compileSdkVersion rootProject.ext.compileSdkVersion
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
     defaultConfig {
         applicationId "com.hadiths"
