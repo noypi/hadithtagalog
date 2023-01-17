@@ -109,7 +109,6 @@ export const TagsModal = ({title, tags, visible, onDismiss, onAddTag, containerS
                         value={inputValue}
                         label={$TAG_INPUT_NEW_LABEL}
                         placeholder={$TAG_INPUT_NEW_PLACEHOLDER}
-                        mode="flat"
                         style={styles.inputTagStyle}
                         right={<TextInput.Icon icon="tag-plus" onPress={onAddTagLocal}/>}
                         />
