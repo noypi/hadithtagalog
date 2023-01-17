@@ -106,7 +106,6 @@ export const TagsModal = ({title, tags, visible, onDismiss, onAddTag, containerS
                     <TextInput
                         onSubmitEditing={onAddTagLocal}
                         onChangeText={setInputValue}
-                        value={inputValue}
                         label={$TAG_INPUT_NEW_LABEL}
                         placeholder={$TAG_INPUT_NEW_PLACEHOLDER}
                         style={styles.inputTagStyle}
@@ -126,7 +125,8 @@ const makeStyles = (colors) => StyleSheet.create({
     inputTagStyle: {
     },
     inputContainerStyle: {
-        marginBottom: 15
+        marginBottom: 15,
+        width: '90%'
     },
     modalViewContainerStyle: {
         height: '100%', 
