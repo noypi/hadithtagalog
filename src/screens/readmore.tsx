@@ -8,13 +8,15 @@ import { splitHadithId } from '../lib/data';
 
 
 export const ReadMoreScreen = ({navigation, route}) => {
+    navigation.setOptions({title: $SCREEN_READMORE_TITLE});
     const {colors} = useAppTheme();
     const [isFavorite, setIsFavorite] = React.useState(route.params.isFavorite);
-    const [readType, setReadType] = React.useState($$LOCALE);
+    const [currLocale, setCurrLocale] = React.useState($$LOCALE);
     const {content, title, bookref, id} = route.params;
 
     const [book, idint] = splitHadithId(id);
-    const otherLocale = ($$LOCALE == 'fil') ? 'eng' : 'fil';
+    const isFil = () => currLocale == 'fil';
+    const otherLocale = ($$LOCALE == 'fil') ? 'eng' : 'fil'; // when 'fil', otherLocale is 'eng'
     const defLocaleData = {
         content, title, bookref, isFavorite
     }
@@ -22,12 +24,18 @@ export const ReadMoreScreen = ({navigation, route}) => {
     const [translation, setTranslation] = React.useState(defLocaleData);
     const [otherLocaleData, setOtherLocaleData] = React.useState({content: "", title: "", isFavorite: false, bookref: ""});
 
-    const currData = (t) => (t == otherLocale) ? otherLocaleData : defLocaleData;
+    const onTranslationChanged = (t) => {
+        console.debug("onTranslationChanged", {t});
+        const nextTransData = (t == otherLocale) ? otherLocaleData : defLocaleData;
+        console.debug({nextTransData});
+        setTranslation(nextTransData);
+        setCurrLocale(t);
+    };
 
     React.useEffect(() => {
         console.debug("ReadMoreScreen", {otherLocale});
         $$db?.getByID(id, otherLocale).then(v => {
-            //console.debug("getByID result =>", {v});
+            console.debug("getByID result =>", {v});
             const atColon = v.content.indexOf(":");
             const title = (atColon>0) ? v.content.slice(0, atColon) : "";
             const content = v.content.slice(v.content.indexOf(":")+1); 
@@ -43,24 +51,22 @@ export const ReadMoreScreen = ({navigation, route}) => {
     //return null;
     return (
         <ScreenWrapper>
-            <SegmentedButtons
-                    value={readType}
-                    onValueChange={t => {setReadType(t); setTranslation(currData(t))}}
-                    buttons={[
-                    { value: 'eng', label: $MENU_ENG, icon: 'alpha-e-box-outline', onPress: () => {}, showSelectedCheck: true},
-                    { value: 'fil', label: $MENU_FIL, icon: 'glasses', onPress: () => {}, showSelectedCheck: true},
-                    ]}
-                />
-            <Surface style={{padding: 15, paddingBottom:5}}>
-                <ScrollView style={{height: '83%'}} >
-                    <Text selectable={true} variant="bodyLarge" style={{marginTop: 20}}>
-                        <Text variant="titleLarge">{translation.title}</Text>
-                        <Text variant="titleMedium">{'\n'+translation.bookref+'\n\n'}</Text>
-                        {translation.content}
+            <View flex={1}>
+                <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', padding:15}}>
+                    <Switch value={currLocale == 'fil'} onValueChange={(b) => onTranslationChanged(b ? 'fil' : 'eng')} />
+                    <Text>{currLocale == 'fil' ? 'Filipino' : 'English'}</Text>
+                </View>
+            </View>
+            <Surface elevation="3" flex={15} style={{margin:15}}>
+                <ScrollView style={{height: '75%', padding: 10}} >
+                    <Text selectable={true} variant="bodyLarge">
+                        <Text variant="titleLarge">{translation?.title ?? ""}</Text>
+                        <Text variant="titleMedium">{'\n'+translation?.bookref ?? ""+'\n\n'}</Text>
+                        {translation?.content ?? ""}
                     </Text>
                 </ScrollView>
             </Surface>
-            <View flex={1} style={{flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 15, marginRight: 20, marginTop: 10}}>
+            <View flex={3} style={{flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 15, marginRight: 20, marginTop: 10}}>
                 <IconButton icon="content-copy" 
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 

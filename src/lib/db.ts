@@ -368,7 +368,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
             db.transaction((tx) => {
                 tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, getTranslator(lang), book], 
                     (tx, r) => {
-                        console.debug("getByID r=>", {r});
+                        //console.debug("getByID r=>", {r});
                         if (r.rows.length > 0) {
                             let item = r.rows.item(0);
                             //console.debug("getByID", {item});
