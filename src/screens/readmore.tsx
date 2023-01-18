@@ -27,13 +27,13 @@ export const ReadMoreScreen = ({navigation, route}) => {
     const onTranslationChanged = (t) => {
         console.debug("onTranslationChanged", {t});
         const nextTransData = (t == otherLocale) ? otherLocaleData : defLocaleData;
-        console.debug({nextTransData});
+        //console.debug({nextTransData});
         setTranslation(nextTransData);
         setCurrLocale(t);
     };
 
     React.useEffect(() => {
-        console.debug("ReadMoreScreen", {otherLocale});
+        //console.debug("ReadMoreScreen", {otherLocale});
         $$db?.getByID(id, otherLocale).then(v => {
             console.debug("getByID result =>", {v});
             const atColon = v.content.indexOf(":");

@@ -38,5 +38,3 @@ Object.defineProperties(global, {
 });
 
 Object.defineProperties(global, localeDefineProperties);
-
-LogBox.ignoreLogs(['Warning: Async Storage has been extracted from react-native core']);
