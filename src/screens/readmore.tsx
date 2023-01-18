@@ -10,12 +10,14 @@ import { splitHadithId } from '../lib/data';
 export const ReadMoreScreen = ({navigation, route}) => {
     navigation.setOptions({title: $SCREEN_READMORE_TITLE});
     const {colors} = useAppTheme();
+    const styles = makeStyles(colors);
     const [isFavorite, setIsFavorite] = React.useState(route.params.isFavorite);
+
+    // this currLocale is only for this screen, NOT to configure globally
     const [currLocale, setCurrLocale] = React.useState($$LOCALE);
     const {content, title, bookref, id} = route.params;
 
     const [book, idint] = splitHadithId(id);
-    const isFil = () => currLocale == 'fil';
     const otherLocale = ($$LOCALE == 'fil') ? 'eng' : 'fil'; // when 'fil', otherLocale is 'eng'
     const defLocaleData = {
         content, title, bookref, isFavorite
@@ -27,13 +29,13 @@ export const ReadMoreScreen = ({navigation, route}) => {
     const onTranslationChanged = (t) => {
         console.debug("onTranslationChanged", {t});
         const nextTransData = (t == otherLocale) ? otherLocaleData : defLocaleData;
-        console.debug({nextTransData});
+        //console.debug({nextTransData});
         setTranslation(nextTransData);
         setCurrLocale(t);
     };
 
     React.useEffect(() => {
-        console.debug("ReadMoreScreen", {otherLocale});
+        //console.debug("ReadMoreScreen", {otherLocale});
         $$db?.getByID(id, otherLocale).then(v => {
             console.debug("getByID result =>", {v});
             const atColon = v.content.indexOf(":");
@@ -52,21 +54,26 @@ export const ReadMoreScreen = ({navigation, route}) => {
     return (
         <ScreenWrapper>
             <View flex={1}>
-                <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', padding:15}}>
-                    <Switch value={currLocale == 'fil'} onValueChange={(b) => onTranslationChanged(b ? 'fil' : 'eng')} />
-                    <Text>{currLocale == 'fil' ? 'Filipino' : 'English'}</Text>
+                <View style={{flexDirection: 'row', alignItems: 'center', marginLeft: 20}}>
+                    <Text flex={5} variant="titleMedium">{translation?.bookref ?? ""}</Text>
+                    <View flex={3} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', padding:15}}>
+                        <Switch value={currLocale == 'fil'} onValueChange={(b) => onTranslationChanged(b ? 'fil' : 'eng')} />
+                        <Text>{currLocale == 'fil' ? 'Filipino' : 'English'}</Text>
+                    </View>
                 </View>
             </View>
-            <Surface elevation="3" flex={15} style={{margin:15}}>
-                <ScrollView style={{height: '75%', padding: 10}} >
+            <Surface elevation="3" flex={15} style={styles.contentContainerStyle}>
+                <ScrollView style={styles.scrollViewStyle} >
                     <Text selectable={true} variant="bodyLarge">
                         <Text variant="titleLarge">{translation?.title ?? ""}</Text>
-                        <Text variant="titleMedium">{'\n'+translation?.bookref ?? ""+'\n\n'}</Text>
-                        {translation?.content ?? ""}
+                        {'\n'+ translation?.content ?? ""}
+                        {
+                            "\n\n"// issue #14 - clipped text at bottom
+                        }
                     </Text>
                 </ScrollView>
             </Surface>
-            <View flex={3} style={{flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 15, marginRight: 20, marginTop: 10}}>
+            <View flex={3} style={{flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 15, marginRight: 20}}>
                 <IconButton icon="content-copy" 
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 
@@ -78,3 +85,16 @@ export const ReadMoreScreen = ({navigation, route}) => {
         </ScreenWrapper>
     );
 }
+
+const makeStyles = colors => StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    scrollViewStyle: {
+        padding: 10,
+    },
+    contentContainerStyle: {
+        margin: 15,
+        marginBottom: 0
+    }
+  });
