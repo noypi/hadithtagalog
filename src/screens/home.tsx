@@ -69,6 +69,10 @@ export const HomeScreen = () => {
         setHighlightWords(words);
         setResultHeader("");
         setResultHeaderError("");
+        if (searchType == FAVORITES || 
+            searchType == TAGS) {
+            setSearchType(""); // fixes #16
+        }
 
         setIsSearching(true);
         setHadithsTotal(0);
@@ -160,7 +164,7 @@ export const HomeScreen = () => {
     }
 
     const renderHadithCardStart = () => {
-        console.log("renderHadithCardStart", {isResultGenDone});
+        //console.log("renderHadithCardStart", {isResultGenDone});
         if (resultHeader.length > 0) { 
             return (<Surface elevation="4" style={[styles.resultHeader]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>);
         }
@@ -168,7 +172,7 @@ export const HomeScreen = () => {
     }
 
     const renderHadithCardEnd = () => {
-        console.log("renderHadithCardEnd", {isResultGenDone});
+        //console.log("renderHadithCardEnd", {isResultGenDone});
         if (!isResultGenDone && hadiths.length >= QUERY_STEP) {
             return (<ActivityIndicator animating={true} size="large" style={{marginBottom: 40}}/>)
         }

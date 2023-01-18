@@ -27,7 +27,7 @@ export const ReadMoreScreen = ({navigation, route}) => {
     const onTranslationChanged = (t) => {
         console.debug("onTranslationChanged", {t});
         const nextTransData = (t == otherLocale) ? otherLocaleData : defLocaleData;
-        console.debug({nextTransData});
+        //console.debug({nextTransData});
         setTranslation(nextTransData);
         setCurrLocale(t);
     };
