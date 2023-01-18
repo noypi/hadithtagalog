@@ -34,7 +34,7 @@ export const ReadMoreScreen = ({navigation, route}) => {
     };
 
     React.useEffect(() => {
-        console.debug("ReadMoreScreen", {otherLocale});
+        //console.debug("ReadMoreScreen", {otherLocale});
         $$db?.getByID(id, otherLocale).then(v => {
             console.debug("getByID result =>", {v});
             const atColon = v.content.indexOf(":");

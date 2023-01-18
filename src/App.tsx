@@ -2,6 +2,7 @@ import React from 'react';
 import {Provider} from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {LocaleProvider} from '@data/locale';
 
 import "./init";
 import {HomeScreen, ReadMoreScreen} from '@screens';
@@ -13,7 +14,7 @@ export default function App() {
     
     //console.debug({colorsPrimary:theme.colors.primary});
     return (
-      <Provider theme={theme}>
+      <Provider theme={theme}><LocaleProvider>
         <NavigationContainer>
             <Stack.Navigator>
                 <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
@@ -28,6 +29,6 @@ export default function App() {
                 }}/>
             </Stack.Navigator>
         </NavigationContainer>
-      </Provider>
+      </LocaleProvider></Provider>
     );
   }

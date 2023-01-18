@@ -4,12 +4,12 @@
         "fil": "Magbasa sa ibang wika"
     },
     SEARCH_PLACEHOLDER: {
-        "eng": "...Search for Hadiths",
-        "fil": "...Maghanap ng Hadith"
+        "eng": "Search for Hadiths",
+        "fil": "Maghanap ng Hadith"
     },
     SEARCH_CATEGORY_PLACEHOLDER: {
-        "eng": "...Search in Categories",
-        "fil": "...Maghanap sa Kategorya"
+        "eng": "Search in Categories",
+        "fil": "Maghanap sa Kategorya"
     },
     SEARCH_RESULT_MESSAGE: {
         "eng": "Hadith Search Results",
@@ -118,5 +118,13 @@
     TAG_INPUT_NEW_PLACEHOLDER: {
         "eng": "Create new Tag",
         "fil": "Gumawa ng bagong Tag"
+    },
+    LANG: {
+        "eng": "English",
+        "fil": "Tagalog"
+    },
+    LANGSHORT: {
+        "eng": "Eng",
+        "fil": "Tag"
     }
 }

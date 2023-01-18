@@ -17,7 +17,8 @@ const FBGGROUP = "https://web.facebook.com/groups/833486274413858";
 export const HomeScreen = () => {
     const theme = useAppTheme();
     const {colors} = theme;
-    const styles = makeStyles(colors);
+    const styles = makeStyles(colors);  
+    const [locale, setLocale] = useLocaleState();
     const [hadiths, setHadiths] = React.useState([]);
     const [hadithsTotal, setHadithsTotal] = React.useState(0);
     const [searchType, setSearchType] = React.useState("");
@@ -40,14 +41,10 @@ export const HomeScreen = () => {
     const [resultHeaderError, setResultHeaderError] = React.useState("");
     const [isLightMode, setIsLightMode] = React.useState(!$$isDarkMode);
 
-    const isLocaleFil = () => $$LOCALE  === 'fil';
     const isCategorySearch = () => searchType == CATEGORY;
     const isFavoritesSearch = () => searchType == FAVORITES;
     const isTagsSearch = () => searchType == TAGS;
     const searchWords = () => searchQuery.split(" ").filter(word => word.length > 0);
-
-    // React.useEffect(() => {
-    // }, [showMenu])
 
     const onBeforePressSearchType = () => {
         setResultHeaderError("");
@@ -313,6 +310,10 @@ export const HomeScreen = () => {
         setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: false}));
     }
 
+    const onUpdateLocale = (l) => {
+        setLocale(l);
+    }
+
     const renderHadithCard = (item) => {        
         item = item.item;
 
@@ -352,7 +353,7 @@ export const HomeScreen = () => {
             <Surface elevation="2">
                 <Surface  style={{flexDirection: 'row'}}>
                     <Searchbar
-                        style={[styles.searchbar, {flex:6}]}
+                        style={[styles.searchbar, {flex:8}]}
                         placeholder={isCategorySearch() ? $SEARCH_CATEGORY_PLACEHOLDER : $SEARCH_PLACEHOLDER}
                         onChangeText={onChangeSearch}
                         onIconPress={onSearch}
@@ -360,27 +361,10 @@ export const HomeScreen = () => {
                         value={searchQuery}
                         loading={isSearching}
                     />                    
-                    <Menu
-                        visible={showMenu}
-                        onDismiss={() => setShowMenu(false)}
-                        anchor={<IconButton icon="menu" mode="flat" onPress={() => setShowMenu(true)}>Show menu</IconButton>}>
-                        <View style={styles.menuItemContainer}>
-                            <RadioButton
-                                value={'filipino'}
-                                status={ isLocaleFil() ? 'checked' : 'unchecked' }
-                                onPress={() => {global.$$LOCALE = 'fil'; setShowMenu(false)}}
-                            />
-                            <Text variant="labelLarge">{$MENU_FIL}</Text>
-                        </View>
-                        <View style={styles.menuItemContainer}>
-                            <RadioButton
-                                value={'filipino'}
-                                status={ !isLocaleFil() ? 'checked' : 'unchecked' }
-                                onPress={() => {global.$$LOCALE = 'eng'; setShowMenu(false)}}
-                            />
-                            <Text variant="labelLarge">{$MENU_ENG}</Text>
-                        </View>
-                    </Menu>
+                    <View style={[styles.menuItemContainer, {flex: 2}]}>
+                        <Switch value={locale == 'fil'} onValueChange={(b) => onUpdateLocale(b ? 'fil' : 'eng')} />
+                        <Text variant="labelLarge">{$LANGSHORT}</Text>
+                    </View>
                 </Surface>
                 <SegmentedButtons
                         value={searchType}
