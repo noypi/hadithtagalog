@@ -12,11 +12,12 @@ export const ReadMoreScreen = ({navigation, route}) => {
     const {colors} = useAppTheme();
     const styles = makeStyles(colors);
     const [isFavorite, setIsFavorite] = React.useState(route.params.isFavorite);
+
+    // this currLocale is only for this screen, NOT to configure globally
     const [currLocale, setCurrLocale] = React.useState($$LOCALE);
     const {content, title, bookref, id} = route.params;
 
     const [book, idint] = splitHadithId(id);
-    const isFil = () => currLocale == 'fil';
     const otherLocale = ($$LOCALE == 'fil') ? 'eng' : 'fil'; // when 'fil', otherLocale is 'eng'
     const defLocaleData = {
         content, title, bookref, isFavorite
