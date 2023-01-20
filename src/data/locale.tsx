@@ -1,11 +1,11 @@
 import React from 'react';
-const langMap = require('./lang.json');
+const langMap = require('./json/lang.json');
 
 const LocaleContext = React.createContext({});
 
-let glocale = 'fil';
+let glocale = 'eng';
 export const LocaleProvider = ({children}) => {
-    const [locale, setLocale] = React.useState('fil');
+    const [locale, setLocale] = React.useState('eng');
 
     const setLocaleProxy = (l) => {
         glocale= l;

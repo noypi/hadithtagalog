@@ -1,4 +1,4 @@
-package com.hadiths.newarchitecture;
+package com.saif.hadiths.newarchitecture;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
@@ -20,9 +20,9 @@ import com.facebook.react.fabric.EmptyReactNativeConfig;
 import com.facebook.react.fabric.FabricJSIModuleProvider;
 import com.facebook.react.fabric.ReactNativeConfig;
 import com.facebook.react.uimanager.ViewManagerRegistry;
-import com.hadiths.BuildConfig;
-import com.hadiths.newarchitecture.components.MainComponentsRegistry;
-import com.hadiths.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
+import com.saif.hadiths.BuildConfig;
+import com.saif.hadiths.newarchitecture.components.MainComponentsRegistry;
+import com.saif.hadiths.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
 import java.util.ArrayList;
 import java.util.List;
 

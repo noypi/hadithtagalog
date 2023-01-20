@@ -45,7 +45,7 @@ export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle,
             <IconButton icon="page-next-outline" 
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 
-                    onPress={() => navigation.navigate('ReadMore', {id, content, title: cardTitle, bookref: subtitle, isFavorite})}/>
+                    onPress={() => navigation.getParent("MainStackNavigator").navigate('ReadMore', {id, content, title: cardTitle, bookref: subtitle, isFavorite})}/>
 
             <IconButton icon="content-copy" 
                     iconColor={colors.primary} 

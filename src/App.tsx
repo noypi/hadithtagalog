@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {LocaleProvider} from '@data/locale';
 
 import "./init";
-import {HomeScreen, ReadMoreScreen} from '@screens';
+import {DrawerScreen, ReadMoreScreen} from '@screens';
 
 const Stack = createNativeStackNavigator();
 export default function App() {
@@ -16,8 +16,8 @@ export default function App() {
     return (
       <Provider theme={theme}><LocaleProvider>
         <NavigationContainer>
-            <Stack.Navigator>
-                <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}} />
+            <Stack.Navigator id="MainStackNavigator">
+                <Stack.Screen name="Drawer" component={DrawerScreen} options={{headerShown: false}} />
                 <Stack.Screen name="ReadMore" component={ReadMoreScreen} options={{
                     headerStyle: {
                         backgroundColor: colors.background,

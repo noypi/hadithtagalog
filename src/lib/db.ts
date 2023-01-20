@@ -4,7 +4,7 @@ import SQLite from 'react-native-sqlite-storage';
 import {SECTION_FIRST, SECTION_LAST} from '@data';
 import { splitHadithId } from './data';
 
-const getTranslator = (lang = $$LOCALE) => ({'fil': 'google_tl', 'eng': 'srceng'}[lang]);
+const getTranslator = (lang = $$LOCALE) => ({'fil': 'google_tl', 'eng': 'srceng', 'ara': 'srcara'}[lang]);
 export const QUERY_STEP = 25;
 
 export const openHadithsDb: any = async (name: string, readOnly: boolean = false) => {
@@ -279,7 +279,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function search(params) {
-        let {matchContent} = params;
+        let {matchContent, matchBooks} = params;
         if (matchContent.length == 0) {
             console.debug("search => empty matchContent");
             return (function*(){})();//empty generator
@@ -297,6 +297,12 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         let q0a = "(content MATCH ?)";
         query =  `${query} (${q0a})`;
         let queryParams = [getTranslator(), matchContent];
+
+        if ((matchBooks?.length ?? 0) > 0) {
+            let bookcond = (new Array(matchBooks.length).fill('?').join(','));
+            query = `${query} AND book IN (${bookcond})`;
+            queryParams = [...queryParams, ...matchBooks];
+        }
         
 
         // append selected sections to query
@@ -322,6 +328,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function searchByIDs(books: Array<string>, ids) {
+        console.debug("searchByIds", {books, ids});
         if (books.length == 0 && ids.length == 0) {
             return [];
         }
@@ -339,7 +346,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
                     queryIds = `idint IN(${queryIds})`;
                     q0.push(queryIds);
                 }
-                query = `${query} AND ${q0.join(" OR ")}`;
+                query = `${query} AND (${q0.join(" AND ")})`;
                 let queryParams = [getTranslator(), ...books, ...ids];
 
                 console.debug("searchByIds", {query});

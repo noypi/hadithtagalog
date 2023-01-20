@@ -1,12 +1,25 @@
 export const SECTION_FIRST = 0;
 export const SECTION_LAST  = 1;
 
-const bukhariSectionsOffset = require("./bukhari-sections.json");
-const bukhariSectionName_tagalog = require("./bukhari-sections-name_tagalog.json");
-const bukhariSectionName_english = require("./bukhari-sections-name_english.json");
+const bukhariSectionsOffset = require("./json/bukhari-sections.json");
+const bukhariSectionName_tagalog = require("./json/bukhari-sections-name_tagalog.json");
+const bukhariSectionName_english = require("./json/bukhari-sections-name_english.json");
 const bukhariSectionsOffsetSorted = Object.values(bukhariSectionsOffset).sort((a,b) => a[SECTION_FIRST] > b[SECTION_FIRST]);
 
-const bookname = require("./bookname.json");
+const abudawudSectionName_english = require("./json/abudawud-sections-name_english.json");
+const abudawudSectionName_arabic = abudawudSectionName_english;
+const ibnmajahSectionName_english = require("./json/ibnmajah-sections-name_english.json");
+const ibnmajahSectionName_arabic = ibnmajahSectionName_english;
+const malikSectionName_english = require("./json/malik-sections-name_english.json");
+const malikSectionName_arabic = malikSectionName_english;
+const muslimSectionName_english = require("./json/muslim-sections-name_english.json");
+const muslimSectionName_arabic = muslimSectionName_english;
+const nasaiSectionName_english = require("./json/nasai-sections-name_english.json");
+const nasaiSectionName_arabic = nasaiSectionName_english;
+const tirmidhiSectionName_english = require("./json/tirmidhi-sections-name_english.json");
+const tirmidhiSectionName_arabic = tirmidhiSectionName_english;
+
+const bookname = require("./json/bookname.json");
 
 const booksSectionsOffset = {
     "bukhari": bukhariSectionsOffsetSorted
@@ -15,10 +28,42 @@ const booksSectionsOffset = {
 export const books2SectionName = {
     "bukhari": {
         "fil": bukhariSectionName_tagalog,
-        "eng": bukhariSectionName_english
+        "eng": bukhariSectionName_english,
+        "ara": bukhariSectionName_english
+    },
+    "abudawud": {
+        "fil": abudawudSectionName_english,
+        "eng": abudawudSectionName_english,
+        "ara": abudawudSectionName_arabic
+    },
+    "ibnmajah": {
+        "fil": ibnmajahSectionName_english,
+        "eng": abudawudSectionName_english,
+        "ara": ibnmajahSectionName_arabic
+    },
+    "malik": {
+        "fil": malikSectionName_english,
+        "eng": malikSectionName_english,
+        "ara": malikSectionName_arabic
+    },
+    "muslim": {
+        "fil": muslimSectionName_english,
+        "eng": muslimSectionName_english,
+        "ara": muslimSectionName_arabic
+    },
+    "nasai": {
+        "fil": nasaiSectionName_english,
+        "eng": nasaiSectionName_english,
+        "ara": nasaiSectionName_arabic
+    },
+    "tirmidhi": {
+        "fil": tirmidhiSectionName_english,
+        "eng": tirmidhiSectionName_english,
+        "ara": tirmidhiSectionName_arabic
     }
 }
 
+export const booksMap = bookname;
 export const bookNameOf = (book) => bookname[book];
 
 const hadithSectionIdOf = (book, id) => {
@@ -37,6 +82,7 @@ const hadithSectionIdOf = (book, id) => {
 export const hadithSectionOffsets = (book) => booksSectionsOffset[book];
 
 export const hadithSectionNameOf = (book, sectionId, lang = $$LOCALE) => {
+    if (book != 'bukhari') { return 'noname' }
     //console.debug("hadithSectionNameOf", {book, sectionId, lang});
     const bynames = books2SectionName[book][lang];
     //console.debug({bynames});

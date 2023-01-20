@@ -150,7 +150,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.hadiths"
+        applicationId "com.saif.hadiths"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 6
