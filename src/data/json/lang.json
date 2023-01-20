@@ -1,0 +1,161 @@
+{
+    SCREEN_READMORE_TITLE: {
+        "ara": "Read another language",
+        "eng": "Read another language",
+        "fil": "Magbasa sa ibang wika"
+    },
+    SEARCH_PLACEHOLDER: {
+        "ara": "ابحث عن الأحاديث",
+        "eng": "Search for Hadiths",
+        "fil": "Maghanap ng Hadith"
+    },
+    SEARCH_CATEGORY_PLACEHOLDER: {
+        "ara": "Search in Categories",
+        "eng": "Search in Categories",
+        "fil": "Maghanap sa Kategorya"
+    },
+    SEARCH_RESULT_MESSAGE: {
+        "ara": "Hadith Search Results",
+        "eng": "Hadith Search Results",
+        "fil": "Mga Nahanap na Hadith"
+    },
+    SEARCH_IDS_RESULT_MESSAGE: {
+        "eng": "Hadith IDs found",
+        "fil": "May nakitang ID ng Hadith"
+    },
+    SEARCH_ZERO_RESULT_MESSAGE: {
+        "ara": "No Hadith found.",
+        "eng": "Hadith IDs found",
+        "fil": "Walang nakitang Hadith."
+    },
+    SEARCH_FAVORITES_RESULT_MESSAGE: {
+        "ara": "Favorites Hadith",
+        "eng": "Favorites Hadith",
+        "fil": "Mga Paboritong Hadith"
+    },
+    SEARCH_FAVORITES_ZERO_RESULT_MESSAGE: {
+        "ara": "No Favorites Hadith",
+        "eng": "No Favorites Hadith",
+        "fil": "Walang Paboritong Hadith"
+    },
+    SEARCH_TAGS_RESULT_MESSAGE: {
+        "ara": "Tagged Hadiths",
+        "eng": "Tagged Hadiths",
+        "fil": "Mga Hadiths na may Tag"
+    },
+    SEARCH_TAGS_ZERO_RESULT_MESSAGE: {
+        "ara": "No Tagged Hadith found",
+        "eng": "No Tagged Hadith found",
+        "fil": "Walang nakitang Hadith na may Tag"
+    },
+    SEARCH_CATEGORIES_RESULT_MESSAGE: {
+        "ara": "Hadiths in Selected Categories",
+        "eng": "Hadiths in Selected Categories",
+        "fil": "Mga Hadith sa Napiling Kategorya"
+    },
+    SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE: {
+        "ara": "No Hadith selected.",
+        "eng": "No Hadith selected.",
+        "fil": "Walang napiling Hadith."
+    },
+    SEARCH_WITH_CATEGORIES_ZERO_RESULT_MESSAGE: {
+        "ara": "No Hadith found. Try searhing without Categories.",
+        "eng": "No Hadith found. Try searhing without Categories.",
+        "fil": "Walang nakita. Subukang maghanap ng walang Kategorya."
+    },
+    NO_FAVORITES_FOUND: {
+        "ara": "No favorite Hadith found",
+        "eng": "No favorite Hadith found",
+        "fil": "Walang paboritong hadith" 
+    },
+    TAG_MODAL_TITLE: {
+        "ara": "Tag the Hadith",
+        "eng": "Tag the Hadith",
+        "fil": "e-Tag ang Hadith"
+    },
+    TAG_SEARCH_MODAL_TITLE: {
+        "ara": "Search from Tags",
+        "eng": "Search from Tags",
+        "fil": "Maghanap galing sa Tags"
+    },
+    CATEGORIES: {
+        "ara": "Categories",
+        "eng": "Categories",
+        "fil": "Mga Kategorya"
+    },
+    REMINDERS_TITLE: {
+        "ara": "Reminders",
+        "eng": "Reminders",
+        "fil": "Mga Paalala"
+    },
+    REMINDERS_CONTENT: {
+        "ara": 'Tagalog Hadith is translated by Google Translate. For corrections please visit "7000+ Sahih Tagalog Hadith" Facebook Group.',
+        "eng": 'Tagalog Hadith is translated by Google Translate. For corrections please visit "7000+ Sahih Tagalog Hadith" Facebook Group.',
+        "fil": 'Ang mga tagalog na Hadith ay isinalin ng Google Translate. Para sa mga pagwawasto mangyaring bisitahin ang "7000+ Sahih Tagalog Hadith" Facebook Group.'
+    },
+    REMINDERS_ACTION_TEXT: {
+        "ara": "OK",
+        "eng": "OK",
+        "fil": "OK"
+    },
+    SEGBUTTONS_CATEGORY: {
+        "ara": "Category",
+        "eng": "Category",
+        "fil": "Kategorya"
+    },
+    SEGBUTTONS_FAVORITES: {
+        "ara": "Favorites",
+        "eng": "Favorites",
+        "fil": "Paborito"
+    },
+    SEGBUTTONS_TAGS: {
+        "ara": "Tags",
+        "eng": "Tags",
+        "fil": "Tags"
+    },
+    MENU_FIL: {
+        "ara": "tagalog",
+        "eng": "tagalog",
+        "fil": "tagalog"
+    },
+    MENU_ENG: {
+        "ara": "eng",
+        "eng": "eng",
+        "fil": "eng"
+    },
+    MENU_DARK: {
+        "ara": "Dark",
+        "eng": "Dark",
+        "fil": "Madilim"
+    },
+    MENU_LIGHT: {
+        "ara": "Light",
+        "eng": "Light",
+        "fil": "Liwanag"
+    },
+    TOAST_COPIED: {
+        "ara": "Copied!",
+        "eng": "Copied!",
+        "fil": "Nakopya na!"
+    },
+    TAG_INPUT_NEW_LABEL: {
+        "ara": "New Tag",
+        "eng": "New Tag",
+        "fil": "Bagong Tag"
+    },
+    TAG_INPUT_NEW_PLACEHOLDER: {
+        "ara": "Create new Tag",
+        "eng": "Create new Tag",
+        "fil": "Gumawa ng bagong Tag"
+    },
+    LANG: {
+        "ara": "English",
+        "eng": "English",
+        "fil": "Tagalog"
+    },
+    LANGSHORT: {
+        "ara": "Eng",
+        "eng": "Eng",
+        "fil": "Tag"
+    }
+}
