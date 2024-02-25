@@ -1,8 +1,9 @@
 import * as React from 'react';
 import {StyleSheet, View, ToastAndroid} from 'react-native';
 import { Avatar, Button, Card, Title, Paragraph, IconButton, Text, Chip, Surface } from 'react-native-paper';
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
+import {gradesRating, gradesOf} from '@data';
 import {HighlightText} from './highlightText';
 
 const TextComponent = ({children}) => {
@@ -10,7 +11,7 @@ const TextComponent = ({children}) => {
     const styles = makeStyles(colors);
     return (<Text 
                  style={styles.normalText}
-                 variant="bodyMedium">{children}</Text>)
+                 variant="bodyLarge">{children}</Text>)
 }
 
 const HighlightComponent = ({children}) => {
@@ -21,14 +22,33 @@ const HighlightComponent = ({children}) => {
                 variant="bodyMedium">{children}</Text>)
 }
 
-const LeftContent = props => <Avatar.Icon {...props} icon="mosque" />
-
 export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle, highlights, onAddFavorite, onRemoveFavorite, onTagHadith}) => {
     const {colors} = useAppTheme();
     const styles = makeStyles(colors);
     const navigation = useNavigation();
-  return (<Card>
-    <Card.Title title={title} subtitle={subtitle} left={LeftContent} />
+
+    const [book, idint] = splitHadithId(id);
+
+    const grades = gradesOf(book, idint);
+    const rating = gradesRating(grades);
+
+    let icon = "mosque";
+    let iconColor = colors.primaryContainer;
+    let iconBackgroundColor = colors.primary;
+    if (rating < -6) {
+        icon = "alert-circle-outline";
+        iconColor = colors.error;
+        iconBackgroundColor = colors.onError;
+    } else if (rating < 0) {
+        icon = "close-octagon-outline";
+        iconColor = colors.error;
+        iconBackgroundColor = colors.onError;
+    }
+
+    const LeftContent = props => <Avatar.Icon {...props} icon={icon} color={iconColor} style={{backgroundColor: iconBackgroundColor}}/>
+
+  return (<Card style={[rating < 0 ? styles.daifStyle : {}]}>
+    <Card.Title title={title} subtitle={subtitle} left={(LeftContent)} />
     <Card.Content>
         <Title>{cardTitle}</Title>
         <Paragraph>
@@ -40,18 +60,24 @@ export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle,
                 textToHighlight={content}
                 />
         </Paragraph>
+        <View style={{marginTop:10}}>
+            {grades.map((g, i) => (
+                    <Text key={i}>- {g.grade} {g.name.length > 0 ? `(${g.name})` : ''}</Text>
+                ))
+            }
+        </View>
     </Card.Content>
     <Card.Actions>            
             <IconButton icon="page-next-outline" 
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 
-                    onPress={() => navigation.navigate('ReadMore', {id, content, title: cardTitle, bookref: subtitle, isFavorite})}/>
+                    onPress={() => navigation.getParent("MainStackNavigator").navigate('ReadMore', {id, content, title: cardTitle, bookref: subtitle, isFavorite})}/>
 
             <IconButton icon="content-copy" 
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 
-                    onPress={() => {
-                        Clipboard.setString(`${cardTitle}:\n${content}\n\n${subtitle}`);
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(`${cardTitle}:\n${content}\n\n${subtitle}`);
                         ToastAndroid.show($TOAST_COPIED, ToastAndroid.SHORT);
                     }}/>
 
@@ -66,6 +92,10 @@ export const HadithCard = ({id, isFavorite, title, subtitle, content, cardTitle,
 };
 
 const makeStyles = (colors) => StyleSheet.create({
+    daifStyle: {
+        backgroundColor: colors.errorContainer,
+        color: colors.error
+    },
     rowContainer: {
         flexDirection: 'row', 
     },

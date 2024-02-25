@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet,  View, Text as RNText, ToastAndroid, ScrollView} from 'react-native';
 import { Surface, Text, Portal, IconButton, SegmentedButtons, Chip, Button, Switch } from 'react-native-paper';
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 
 import {ScreenWrapper} from './screenwrapper';
 import { splitHadithId } from '../lib/data';
@@ -18,7 +18,7 @@ export const ReadMoreScreen = ({navigation, route}) => {
     const {content, title, bookref, id} = route.params;
 
     const [book, idint] = splitHadithId(id);
-    const otherLocale = ($$LOCALE == 'fil') ? 'eng' : 'fil'; // when 'fil', otherLocale is 'eng'
+    const otherLocale = ($$LOCALE == 'ara') ? 'eng' : 'ara'; // when 'ara', otherLocale is 'eng'
     const defLocaleData = {
         content, title, bookref, isFavorite
     }
@@ -57,8 +57,8 @@ export const ReadMoreScreen = ({navigation, route}) => {
                 <View style={{flexDirection: 'row', alignItems: 'center', marginLeft: 20}}>
                     <Text flex={5} variant="titleMedium">{translation?.bookref ?? ""}</Text>
                     <View flex={3} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', padding:15}}>
-                        <Switch value={currLocale == 'fil'} onValueChange={(b) => onTranslationChanged(b ? 'fil' : 'eng')} />
-                        <Text>{currLocale == 'fil' ? 'Filipino' : 'English'}</Text>
+                        <Switch value={currLocale == 'ara'} onValueChange={(b) => onTranslationChanged(b ? 'ara' : 'eng')} />
+                        <Text>{currLocale == 'ara' ? 'Arabic' : 'English'}</Text>
                     </View>
                 </View>
             </View>
@@ -77,8 +77,8 @@ export const ReadMoreScreen = ({navigation, route}) => {
                 <IconButton icon="content-copy" 
                     iconColor={colors.primary} 
                     containerColor={colors.surface} 
-                    onPress={() => {
-                        Clipboard.setString(`${translation.title}:\n${translation.content}\n\n${translation.bookref}`);
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(`${translation.title}:\n${translation.content}\n\n${translation.bookref}`);
                         ToastAndroid.show($TOAST_COPIED, ToastAndroid.SHORT);
                     }}/>
             </View>

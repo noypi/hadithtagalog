@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, FlatList, View, Linking} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton } from 'react-native-paper';
-import {hadithSectionInfoOf, bookNameOf} from '@data';
+import {hadithSectionInfoOf, bookNameOf, booksMap} from '@data';
 import {QUERY_STEP} from '@lib';
 
 import {ScreenWrapper} from './screenwrapper';
@@ -14,7 +14,8 @@ const TAGS = "tags";
 const FBGGROUP = "https://web.facebook.com/groups/833486274413858";
 
 
-export const HomeScreen = () => {
+export const HomeScreen = ({navigation}) => {
+    //navigation.setOptions({header: () => null});
     const theme = useAppTheme();
     const {colors} = theme;
     const styles = makeStyles(colors);  
@@ -74,14 +75,21 @@ export const HomeScreen = () => {
         setIsSearching(true);
         setHadithsTotal(0);
         let matchIds = words.filter(w => Number.isInteger(parseInt(w)));
-        let matchContent = searchQuery;
+        let matchBooks = words.map(w => w.toLowerCase()).filter(w =>  {
+            // format <colon><bookname>
+            return w.length > 1 && w.endsWith(':') && w.slice(0, -1) in booksMap
+        }).map(w => w.slice(0, -1));
+        let matchContent = words.filter(w => {
+            //remove any word beginning with ':'
+            return !(w.length > 1 && w.endsWith(':'));
+        }).join(" ");
 
-        const qSearchByIds = matchIds.length > 0 ? $$db?.searchByIDs([], matchIds) : Promise.resolve([]);
+        const qSearchByIds = matchIds.length > 0 ? $$db?.searchByIDs(matchBooks, matchIds) : Promise.resolve([]);
         // match 
         //  - integer ids on search bar
         //  - hadith content
         //  - selected categories on search
-        let rg = await $$db?.search({matchContent, selected: isCategorySearch() ? selectedCategories : null});
+        let rg = await $$db?.search({matchContent, matchBooks, selected: isCategorySearch() ? selectedCategories : null});
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
@@ -113,6 +121,7 @@ export const HomeScreen = () => {
     }
 
     const onScrollToEnd = async () => {
+        console.debug('+onScrollToEnd')
         setIsSearching(true);
         let y = await resultGen.next();
         console.debug("onScrollToEnd ", {done: y.done});
@@ -330,7 +339,7 @@ export const HomeScreen = () => {
         const cardTitle = (atColon>0) ? text.slice(0, atColon) : "";
         const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
         const highlights = highlightWords.filter(v => (/^[a-z0-9]+$/i).test(v));
-        const sectionInfo = hadithSectionInfoOf(item.id);
+        const sectionInfo = book == 'bukhari' ? hadithSectionInfoOf(item.id) : {title: "", id: 0};
         const isFavorite = item.id in favoritesLocal ? favoritesLocal[item.id] : !!item.favorite_id;
         const props = {
             onAddFavorite,
@@ -362,7 +371,7 @@ export const HomeScreen = () => {
                         loading={isSearching}
                     />                    
                     <View style={[styles.menuItemContainer, {flex: 2}]}>
-                        <Switch value={locale == 'fil'} onValueChange={(b) => onUpdateLocale(b ? 'fil' : 'eng')} />
+                        <Switch value={locale == 'ara'} onValueChange={(b) => onUpdateLocale(b ? 'ara' : 'eng')} />
                         <Text variant="labelLarge">{$LANGSHORT}</Text>
                     </View>
                 </Surface>
@@ -422,14 +431,6 @@ export const HomeScreen = () => {
                 onAddTag={onNewTag}
                 onDismiss={onHadithTagsSelected} 
                 onToggleItem={onToggleHadithTag}/>
-            <PopupDialog 
-                title={$REMINDERS_TITLE}
-                contentComponent={<><Text variant="bodyLarge">{$REMINDERS_CONTENT}</Text><Button type="text" onPress={() => Linking.openURL(FBGGROUP)}>{FBGGROUP}</Button></>}
-                actionText={$REMINDERS_ACTION_TEXT}
-                onAction={() => setShowRemindersDialog(false)}
-                onDismiss={() => setShowRemindersDialog(false)}
-                visible={showRemindersDialog}
-            />
         </ScreenWrapper>
     );
 };
