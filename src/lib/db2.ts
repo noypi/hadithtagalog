@@ -3,8 +3,8 @@ import { Asset } from 'expo-asset';
 import KnexDialect from '@lib/knex_dialect';
 import { unzip, subscribe } from 'react-native-zip-archive';
 import knex from 'knex';
-import { Table } from '@types';
-import { SECTION_FIRST, SECTION_LAST } from '@data';
+import { Table } from '@lib/enums';
+import { SECTION_FIRST, SECTION_LAST } from '@data/';
 import config from '@config/';
 
 const DB_FILENAME = 'hadiths_all.db';
@@ -123,7 +123,7 @@ export const openHadithsDb2: any = async () => {
                 .count({ count: 'translation_id' })
                 .first()
             const total_query_string = total_query.toString();
-            total_query.then(res => res?.count ?? 0)
+            const total = await total_query.then(res => res?.count ?? 0)
                 .catch(err => console.error('execute_gen_query total', err, { total_query: total_query_string }));
 
             for (let page = 0; true; page++) {
@@ -139,15 +139,14 @@ export const openHadithsDb2: any = async () => {
                     break;
                 }
 
-                //console.debug('yielding', { result });
                 yield ({
                     translations: translations.map(v => ({ ...v, id: `${v.book}:${v.idint}` })),
-                    total: await total_query
+                    total,
                 });
             }
         },
 
-        async searchByIDs(books: string[], ids, opts) {
+        async search_by_ids(books: string[], ids, opts) {
             console.debug('+getRange');
 
             const { per_page } = Object.assign({
@@ -179,7 +178,7 @@ export const openHadithsDb2: any = async () => {
                 console.debug("search => empty matchContent");
                 return (function* () { })();//empty generator
             }
-            match_content = "*" + match_content.split(" ").join("* *") + "*";
+            match_content = "'*" + match_content.split(" ").join("*' '*") + "*'";
 
             if (match_content.trim().length == 0) {
                 if (!!params.selected) {

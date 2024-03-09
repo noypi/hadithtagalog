@@ -15,8 +15,6 @@ module.exports = function (api) {
                         '@lib': './src/lib/',
                         '@screens': './src/screens/',
                         '@data': './src/data/',
-                        '@enums': './src/types/enums/',
-                        '@types': './src/types/',
                         '@stores': './src/stores/',
                         '@config': './src/config/',
                     },
