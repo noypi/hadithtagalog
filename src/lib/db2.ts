@@ -5,12 +5,11 @@ import { unzip, subscribe } from 'react-native-zip-archive';
 import knex from 'knex';
 import { Table } from '@types';
 import { SECTION_FIRST, SECTION_LAST } from '@data';
+import config from '@config/';
 
 const DB_FILENAME = 'hadiths_all.db';
 const DB_ZIPFILE = `${DB_FILENAME}.zip`;
 const ASSET_DB_PATH = `../../assets/${DB_ZIPFILE}`;
-
-const per_page = 15;
 
 subscribe(({ progress, filePath }) => {
     // the filePath is always empty on iOS for zipping.
@@ -70,12 +69,12 @@ export const openHadithsDb2: any = async () => {
     const db = await create_knex();
 
     return {
-        async getSelectedRanges(selected) {
+        async getSelectedRanges(selected, opts) {
             console.log('+getSelectedRanges()');
-            return await this.getSelectedRanges0(selected);
+            return await this.getSelectedRanges0(selected, opts);
         },
 
-        async * getSelectedRanges0(selected) {
+        async * getSelectedRanges0(selected, opts) {
             const books = Object.keys(selected);
             for await (const book of books) {
                 console.debug('getSelectedRanges0', { book });
@@ -86,7 +85,7 @@ export const openHadithsDb2: any = async () => {
                     ranges.push([section[SECTION_FIRST], section[SECTION_LAST]])
                 }
 
-                const gen = await this.getRange(book, ranges)
+                const gen = await this.getRange(book, ranges, opts)
                 while (true) {
                     let y = await gen.next();
                     //console.debug("getSelectedRanges0 ", { y });
@@ -98,7 +97,7 @@ export const openHadithsDb2: any = async () => {
             }
         },
 
-        async * getRange(book, ranges) {
+        async getRange(book, ranges, opts) {
             console.debug('+getRange');
 
             const query = db(Table.translations)
@@ -112,11 +111,20 @@ export const openHadithsDb2: any = async () => {
                 });
             });
 
-            const total = await query.clone()
+            return await this.execute_gen_query(query, opts);
+        },
+
+        async * execute_gen_query(query, opts) {
+            const { per_page } = Object.assign({
+                per_page: config.per_page
+            }, opts);
+
+            const total_query = query.clone()
                 .count({ count: 'translation_id' })
                 .first()
-                .then(res => res?.count ?? 0)
-                .catch(err => console.error('getRange total', err));
+            const total_query_string = total_query.toString();
+            total_query.then(res => res?.count ?? 0)
+                .catch(err => console.error('execute_gen_query total', err, { total_query: total_query_string }));
 
             for (let page = 0; true; page++) {
                 const page_query = query.clone()
@@ -125,7 +133,7 @@ export const openHadithsDb2: any = async () => {
 
                 console.debug({ page, page_query: page_query.toString() });
                 const translations = await page_query
-                    .catch(err => console.error('getRange page_query', err));
+                    .catch(err => console.error('execute_gen_query page_query', err));
 
                 if (!translations?.length) {
                     break;
@@ -134,9 +142,83 @@ export const openHadithsDb2: any = async () => {
                 //console.debug('yielding', { result });
                 yield ({
                     translations: translations.map(v => ({ ...v, id: `${v.book}:${v.idint}` })),
-                    total
+                    total: await total_query
                 });
             }
+        },
+
+        async searchByIDs(books: string[], ids, opts) {
+            console.debug('+getRange');
+
+            const { per_page } = Object.assign({
+                per_page: config.per_page
+            }, opts);
+
+            const query = db(Table.translations)
+                .select('*')
+                .whereIn('book', books)
+                .whereIn('idint', ids)
+                .where('translator', getTranslator());
+
+            const total = await query.clone()
+                .count({ count: 'translation_id' })
+                .first()
+                .then(res => res?.count ?? 0)
+                .catch(err => console.error('searchByIDs total', err));
+
+            return {
+                translations: await query,
+                total: await total,
+            };
+        },
+
+        async search(params) {
+            console.debug('search', { params });
+            let { match_content, match_books } = params;
+            if (match_content.length == 0) {
+                console.debug("search => empty matchContent");
+                return (function* () { })();//empty generator
+            }
+            match_content = "*" + match_content.split(" ").join("* *") + "*";
+
+            if (match_content.trim().length == 0) {
+                if (!!params.selected) {
+                    await this.getSelectedRanges(params.selected);
+                }
+                return
+            }
+
+            const query = db(Table.translations)
+                .select('*')
+                .where('translator', getTranslator())
+                .where(db.raw(`(content MATCH ${match_content})`));
+
+            if (match_books.length) {
+                query.whereIn('book', match_books);
+            }
+
+            // append selected sections to query
+            if (!!params.selected) {
+                let q1 = "";
+                Object.keys(params.selected).forEach(book_section => {
+                    let ranges: Array<any> = [];
+                    Object.keys(params.selected[book_section]).forEach(section_id => {
+                        let section: Array<any> = params.selected[book_section][section_id];
+                        ranges.push([section[SECTION_FIRST], section[SECTION_LAST]]);
+                    })
+
+                    query.where(function () {
+                        this.where('book', book_section)
+                            .where(function () {
+                                ranges.forEach(v => {
+                                    this.orWhereBetween('idint', [v[0], v[1]]);
+                                });
+                            });
+                    });
+                });
+            }
+
+            return await this.execute_gen_query(query, {});
         }
     }
 }

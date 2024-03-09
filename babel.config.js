@@ -12,11 +12,13 @@ module.exports = function (api) {
                 "module-resolver",
                 {
                     alias: {
-                        '@lib': './src/lib',
-                        '@screens': './src/screens',
-                        '@data': './src/data',
-                        '@enums': './src/types/enums',
-                        '@types': './src/types',
+                        '@lib': './src/lib/',
+                        '@screens': './src/screens/',
+                        '@data': './src/data/',
+                        '@enums': './src/types/enums/',
+                        '@types': './src/types/',
+                        '@stores': './src/stores/',
+                        '@config': './src/config/',
                     },
                 },
             ],

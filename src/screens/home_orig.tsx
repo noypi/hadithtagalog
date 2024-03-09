@@ -1,16 +1,11 @@
 import React from 'react';
-import { StyleSheet, FlatList, View, Linking } from 'react-native';
+import {StyleSheet, FlatList, View, Linking} from 'react-native';
 import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton } from 'react-native-paper';
-import { hadithSectionInfoOf, bookNameOf, booksMap } from '@data';
-import { QUERY_STEP } from '@lib';
+import {hadithSectionInfoOf, bookNameOf, booksMap} from '@data';
+import {QUERY_STEP} from '@lib';
 
-import $app, { useAppStore } from '@stores/app';
-import $locale, { useLocaleStore } from '@stores/locale';
-import $hadiths from '@stores/hadiths';
-
-import { ScreenWrapper } from './screenwrapper';
-import { HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog } from './components';
-
+import {ScreenWrapper} from './screenwrapper';
+import {HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog} from './components';
 
 const CATEGORY = "category";
 const FAVORITES = "favorites";
@@ -18,94 +13,16 @@ const TAGS = "tags";
 
 const FBGGROUP = "https://web.facebook.com/groups/833486274413858";
 
-export const HomeScreen = (options) => {
 
-    const $screen = () => (
-        <ScreenWrapper>
-            <Surface elevation={2}>
-                <Surface style={{ flexDirection: 'row' }}>
-                    <Searchbar
-                        style={[styles.searchbar, { flex: 8 }]}
-                        placeholder={isCategorySearch() ? $tk.SEARCH_CATEGORY_PLACEHOLDER : $tk.SEARCH_PLACEHOLDER}
-                        onChangeText={onChangeSearch}
-                        onIconPress={onSearch}
-                        onSubmitEditing={onSubmitEditing}
-                        value={searchQuery}
-                        loading={isSearching}
-                    />
-                    <View style={[styles.menuItemContainer, { flex: 2 }]}>
-                        <Switch value={$lang == 'ara'} onValueChange={(b) => onUpdateLocale(b ? 'ara' : 'eng')} />
-                        <Text variant="labelLarge">{$tk.LANGSHORT}</Text>
-                    </View>
-                </Surface>
-                <SegmentedButtons
-                    value={searchType}
-                    onValueChange={v => setSearchType(v == searchType ? "" : v)}
-                    buttons={[
-                        { value: CATEGORY, label: $tk.SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true },
-                        { value: FAVORITES, label: $tk.SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true },
-                        { value: TAGS, label: $tk.SEGBUTTONS_TAGS, icon: 'tag-outline', onPress: onPressTags, showSelectedCheck: true },
-                    ]}
-                />
-                {(resultHeaderError.length > 0) ?
-                    (<Surface elevation={4} style={[styles.resultHeader, styles.resultHeaderError]}>
-                        <Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{resultHeaderError}</Title>
-                    </Surface>) : null
-                }
-                <Surface style={{ flexDirection: 'row', marginRight: 5 }}>
-                    <Text style={{ flex: 2, textAlign: 'right', marginRight: 4 }}>({$hadiths.list.length}/{$hadiths.total})</Text>
-                </Surface>
-            </Surface>
-            {$hadiths.list.length == 0 && !isSearching ?
-                <SectionsSurface
-                    containerStyle={styles.modalContainer}
-                    book="bukhari"
-                    onPressItem={onCategoriesSelected} /> : null
-            }
-
-            <FlatList
-                data={["start", ...$hadiths.list, "end"]}
-                keyExtractor={(item, i) => i}
-                renderItem={renderHadithCard}
-                onEndReached={onScrollToEnd}
-                onEndReachedThreshold={1}
-            />
-
-            <SectionsModal
-                visible={showSectionModal}
-                containerStyle={styles.modalContainer}
-                book="bukhari"
-                onDismiss={onCategoriesSelected} />
-            {/*
-            <TagsModal
-                title={$tk.TAG_SEARCH_MODAL_TITLE}
-                visible={showTagsModal}
-                containerStyle={styles.modalContainer}
-                tags={knownTags}
-                onDeleteTag={onDeleteTag}
-                onAddTag={onNewTag}
-                onDismiss={onTagsSelected} />
-            <TagsModal
-                title={$tk.TAG_MODAL_TITLE}
-                visible={showHadithTagsModal}
-                containerStyle={styles.modalContainer}
-                hadithId={hadithIdToTag}
-                tags={knownTags}
-                hadithTags={tagsOfHadithIdToTag}
-                onAddTag={onNewTag}
-                onDismiss={onHadithTagsSelected}
-                onToggleItem={onToggleHadithTag} />
-        */}
-        </ScreenWrapper>
-    );
-
-
+export const HomeScreen = ({navigation}) => {
     //navigation.setOptions({header: () => null});
-    const { $theme, $colors } = useAppStore();
-    const { $tk, $lang } = useLocaleStore();
-    const styles = makeStyles($colors);
-
-    const [searchType, setSearchType] = React.useState('');
+    const theme = useAppTheme();
+    const {colors} = theme;
+    const styles = makeStyles(colors);  
+    const [locale, setLocale] = useLocaleState();
+    const [hadiths, setHadiths] = React.useState([]);
+    const [hadithsTotal, setHadithsTotal] = React.useState(0);
+    const [searchType, setSearchType] = React.useState("");
     const [favoritesLocal, setFavoritesLocal] = React.useState({});
     const [showSectionModal, setShowSectionModal] = React.useState(false);
     const [showTagsModal, setShowTagsModal] = React.useState(false);
@@ -120,10 +37,10 @@ export const HomeScreen = (options) => {
     const [selectedCategories, setSelectedCategories] = React.useState({});
     const [highlightWords, setHighlightWords] = React.useState([]);
     const [isResultGenDone, setIsResultGenDone] = React.useState(true);
-    const [resultGen, setResultGen] = React.useState({ next: () => ({ value: [], done: true }) });
+    const [resultGen, setResultGen] = React.useState({next: () => ({value:[], done: true})});
     const [resultHeader, setResultHeader] = React.useState("");
     const [resultHeaderError, setResultHeaderError] = React.useState("");
-    const [isLightMode, setIsLightMode] = React.useState(!$locale.is_dark);
+    const [isLightMode, setIsLightMode] = React.useState(!$$isDarkMode);
 
     const isCategorySearch = () => searchType == CATEGORY;
     const isFavoritesSearch = () => searchType == FAVORITES;
@@ -133,7 +50,7 @@ export const HomeScreen = (options) => {
     const onBeforePressSearchType = () => {
         setResultHeaderError("");
     };
-
+    
     const onChangeSearch = query => {
         //console.debug("+- onChangeSearch() =>", {query});
         setSearchQuery(query)
@@ -150,34 +67,34 @@ export const HomeScreen = (options) => {
         setHighlightWords(words);
         setResultHeader("");
         setResultHeaderError("");
-        if (searchType == FAVORITES ||
+        if (searchType == FAVORITES || 
             searchType == TAGS) {
             setSearchType(""); // fixes #16
         }
 
-        //setIsSearching(true);
-
-        let match_ids = words.filter(w => Number.isInteger(parseInt(w)));
-        let match_books = words.map(w => w.toLowerCase()).filter(w => {
+        setIsSearching(true);
+        setHadithsTotal(0);
+        let matchIds = words.filter(w => Number.isInteger(parseInt(w)));
+        let matchBooks = words.map(w => w.toLowerCase()).filter(w =>  {
             // format <colon><bookname>
             return w.length > 1 && w.endsWith(':') && w.slice(0, -1) in booksMap
         }).map(w => w.slice(0, -1));
-        let match_content = words.filter(w => {
+        let matchContent = words.filter(w => {
             //remove any word beginning with ':'
             return !(w.length > 1 && w.endsWith(':'));
         }).join(" ");
 
-        const qSearchByIds = match_ids.length > 0 ? $$db?.searchByIDs(match_books, match_ids) : Promise.resolve([]);
+        const qSearchByIds = matchIds.length > 0 ? $$db?.searchByIDs(matchBooks, matchIds) : Promise.resolve([]);
         // match 
         //  - integer ids on search bar
         //  - hadith content
         //  - selected categories on search
-        let rg = await $$db?.search({ match_content, match_books, selected: isCategorySearch() ? selectedCategories : null });
+        let rg = await $$db?.search({matchContent, matchBooks, selected: isCategorySearch() ? selectedCategories : null});
         setResultGen(rg);
         let y = await rg.next();
         setIsResultGenDone(y.done);
         let results = y?.value ?? [];
-
+        
         let byIdsResults = await qSearchByIds;
         let hasSearchResults = results?.translations?.length > 0 ?? false;
         let translations = [...(byIdsResults?.translations ?? []), ...(results?.translations ?? [])];
@@ -186,18 +103,18 @@ export const HomeScreen = (options) => {
         setIsSearching(false);
         if (translations.length > 0) {
             let msg = "";
-            if (isCategorySearch()) {
-                msg = (hasSearchResults) ? $tk.SEARCH_CATEGORIES_RESULT_MESSAGE : $tk.SEARCH_IDS_RESULT_MESSAGE;
+            if (isCategorySearch()) { 
+                msg = (hasSearchResults) ? $SEARCH_CATEGORIES_RESULT_MESSAGE : $SEARCH_IDS_RESULT_MESSAGE;
             } else {
-                msg = (hasSearchResults) ? $tk.SEARCH_RESULT_MESSAGE : $tk.SEARCH_IDS_RESULT_MESSAGE;
+                msg = (hasSearchResults) ? $SEARCH_RESULT_MESSAGE : $SEARCH_IDS_RESULT_MESSAGE;
             }
             setResultHeader(msg);
         } else {
             let msg = "";
             if (isCategorySearch()) {
-                msg = $tk.SEARCH_WITH_CATEGORIES_ZERO_RESULT_MESSAGE;
+                msg = $SEARCH_WITH_CATEGORIES_ZERO_RESULT_MESSAGE;
             } else {
-                msg = $tk.SEARCH_ZERO_RESULT_MESSAGE;
+                msg = $SEARCH_ZERO_RESULT_MESSAGE;
             }
             setResultHeaderError(msg);
         }
@@ -207,16 +124,16 @@ export const HomeScreen = (options) => {
         console.debug('+onScrollToEnd')
         setIsSearching(true);
         let y = await resultGen.next();
-        console.debug("onScrollToEnd ", { done: y.done });
+        console.debug("onScrollToEnd ", {done: y.done});
         setIsResultGenDone(y.done);
         if (!y.done) {
             let results = y?.value ?? [];
             setHadithsSafe([...hadiths, ...results.translations]);
-        }
+        }        
         setIsSearching(false);
     }
 
-    const onSubmitEditing = async ({ nativeEvent: { text } }) => {
+    const onSubmitEditing = async ({nativeEvent: {text}}) => {
         setHighlightWords(searchWords());
         onSearch();
     };
@@ -228,34 +145,33 @@ export const HomeScreen = (options) => {
         setShowSectionModal(false);
         setSelectedCategories(selected);
 
-        if (Object.keys(selected).length == 0) {
-            setResultHeaderError($tk.SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE);
-            return
+        if (Object.keys(selected).length == 0) { 
+            setResultHeaderError($SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE);
+            return 
         };
 
-        //setIsSearching(true);
+        setIsSearching(true);
+        setHadithsTotal(0);
 
-        await $hadiths.update(selected);
-
-        // let rg = await $$db?.getSelectedRanges(selected)
-        // setResultGen(rg);
-        // let y = await rg.next();
-        // setIsResultGenDone(y.done);
-        // let results: Array<any> = y?.value ?? [];
-        // setHadithsSafe(results?.translations);
-        // setHadithsTotal(results?.total);
-        // setIsSearching(false);
-        // if (results?.translations?.length > 0 ?? false) {
-        //     setResultHeader($tk.SEARCH_CATEGORIES_RESULT_MESSAGE);
-        // } else {
-        //     setSearchType("");
-        //     setResultHeaderError($tk.SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE);
-        // }
+        let rg = await $$db?.getSelectedRanges(selected)
+        setResultGen(rg);
+        let y = await rg.next();
+        setIsResultGenDone(y.done);
+        let results: Array<any> = y?.value ?? [];
+        setHadithsSafe(results?.translations);
+        setHadithsTotal(results?.total);
+        setIsSearching(false);
+        if (results?.translations?.length > 0 ?? false) {
+            setResultHeader($SEARCH_CATEGORIES_RESULT_MESSAGE);
+        } else {
+            setSearchType("");
+            setResultHeaderError($SEARCH_CATEGORIES_ZERO_RESULT_MESSAGE);
+        }        
     }
 
     const renderHadithCardStart = () => {
         //console.log("renderHadithCardStart", {isResultGenDone});
-        if (resultHeader.length > 0) {
+        if (resultHeader.length > 0) { 
             return (<Surface elevation="4" style={[styles.resultHeader]}><Title style={styles.resultHeaderText}>{resultHeader}</Title></Surface>);
         }
         return null;
@@ -264,13 +180,13 @@ export const HomeScreen = (options) => {
     const renderHadithCardEnd = () => {
         //console.log("renderHadithCardEnd", {isResultGenDone});
         if (!isResultGenDone && hadiths.length >= QUERY_STEP) {
-            return (<ActivityIndicator animating={true} size="large" style={{ marginBottom: 40 }} />)
+            return (<ActivityIndicator animating={true} size="large" style={{marginBottom: 40}}/>)
         }
         return null;
     }
 
     const onPressCategories = () => {
-        console.debug("onPressCategories", { searchType });
+        console.debug("onPressCategories", {searchType});
         onBeforePressSearchType();
         if (!isCategorySearch()) {
             setShowSectionModal(true);
@@ -281,14 +197,14 @@ export const HomeScreen = (options) => {
         }
     }
 
-    const updateKnownTags = async (sortfn: (a: string, b: string) => void = () => { }) => {
+    const updateKnownTags = async (sortfn:(a:string, b:string) => void = () => {}) => {
         let tags = await $$db.getTags();
-        console.debug("updateKnownTags", { tags });
+        console.debug("updateKnownTags", {tags});
         tags = tags.sort();
         setKnownTags(tags.sort(sortfn));
     }
 
-    const onPressTags = async () => {
+    const onPressTags = async() => {
         onBeforePressSearchType();
         if (!isTagsSearch()) {
             await updateKnownTags();
@@ -300,9 +216,9 @@ export const HomeScreen = (options) => {
     }
 
     const onToggleHadithTag = async (hadithId, tag, isSelected) => {
-        if (tag.length == 0) { return }
+        if (tag.length == 0) {return}
 
-        isSelected ?
+        isSelected ? 
             await $$db.addHadithTag(hadithId, tag) :
             await $$db.removeHadithTag(hadithId, tag);
     }
@@ -311,12 +227,12 @@ export const HomeScreen = (options) => {
         setShowHadithTagsModal(false);
     }
 
-    const onTagsSelected = async (selected) => {
-        console.debug("onTagsSelected", { selected });
+    const onTagsSelected = async(selected) => {
+        console.debug("onTagsSelected", {selected});
         setShowTagsModal(false);
 
         if (selected.length == 0) {
-            setResultHeaderError($tk.SEARCH_TAGS_ZERO_RESULT_MESSAGE);
+            setResultHeaderError($SEARCH_TAGS_ZERO_RESULT_MESSAGE);
             setSearchType("");
             return
         }
@@ -335,20 +251,20 @@ export const HomeScreen = (options) => {
         setHadithsTotal(results?.total ?? 0);
 
         if (results?.translations?.length > 0 ?? false) {
-            setResultHeader($tk.SEARCH_TAGS_RESULT_MESSAGE);
+            setResultHeader($SEARCH_TAGS_RESULT_MESSAGE);
         } else {
-            setResultHeaderError($tk.SEARCH_TAGS_ZERO_RESULT_MESSAGE);
+            setResultHeaderError($SEARCH_TAGS_ZERO_RESULT_MESSAGE);
         }
     }
 
     const onDeleteTag = async (tag) => {
-        console.debug("onDeleteTag", { tag });
+        console.debug("onDeleteTag", {tag});
         await $$db.delTagAndUnTagHadiths(tag);
         await updateKnownTags();
     }
 
     const onNewTag = async (tag) => {
-        console.debug("onNewTag", { tag });
+        console.debug("onNewTag", {tag});
         if (await $$db.newTag(tag)) {
             await updateKnownTags();
         } else {
@@ -358,9 +274,9 @@ export const HomeScreen = (options) => {
 
     const onShowTagHadithModal = async (id) => {
         let tags: Array<string> = await $$db.getHadithTags(id);
-        console.debug("onShowTagHadithModal", { tags });
+        console.debug("onShowTagHadithModal", {tags});
         // pass sortfn to place selected first in order
-        await updateKnownTags((a: string, b: string) => tags.indexOf(a) < 0 ? 1 : tags.indexOf(b) < 0 ? -1 : a.localeCompare(b));
+        await updateKnownTags((a:string, b:string) => tags.indexOf(a)<0 ? 1 : tags.indexOf(b)<0? -1 : a.localeCompare(b));
         setTagsOfHadithIdToTag(tags);
         setHadithIdToTag(id);
         setShowHadithTagsModal(true);
@@ -382,9 +298,9 @@ export const HomeScreen = (options) => {
             setFavoritesLocal({});
             setIsSearching(false);
             if (results?.translations?.length > 0 ?? false) {
-                setResultHeader($tk.SEARCH_FAVORITES_RESULT_MESSAGE)
+                setResultHeader($SEARCH_FAVORITES_RESULT_MESSAGE)
             } else {
-                setResultHeaderError($tk.SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);
+                setResultHeaderError($SEARCH_FAVORITES_ZERO_RESULT_MESSAGE);
                 setSearchType("");
             }
         } else {
@@ -395,23 +311,23 @@ export const HomeScreen = (options) => {
 
     const onAddFavorite = async (id) => {
         await $$db.addFavorite(id);
-        setFavoritesLocal(Object.assign({}, favoritesLocal, { [id]: true }));
+        setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: true}));
     }
 
     const onRemoveFavorite = async (id) => {
         await $$db.removeFavorite(id);
-        setFavoritesLocal(Object.assign({}, favoritesLocal, { [id]: false }));
+        setFavoritesLocal(Object.assign({}, favoritesLocal, {[id]: false}));
     }
 
     const onUpdateLocale = (l) => {
         setLocale(l);
     }
 
-    const renderHadithCard = (item) => {
+    const renderHadithCard = (item) => {        
         item = item.item;
 
-        if (item === "start") { return renderHadithCardStart() }
-        else if (item === "end") { return renderHadithCardEnd() }
+        if (item === "start") {return renderHadithCardStart()}
+        else if (item === "end") {return renderHadithCardEnd()}
 
         if (!item || !item.content) {
             return null;
@@ -420,10 +336,10 @@ export const HomeScreen = (options) => {
         const [book, id] = splitHadithId(item.id);
         const text = item.content;
         const atColon = text.indexOf(":");
-        const cardTitle = (atColon > 0) ? text.slice(0, atColon) : "";
-        const content = text.slice(text.indexOf(":") + 1); // if atColon is -1 => then .slice(0) => original text
+        const cardTitle = (atColon>0) ? text.slice(0, atColon) : "";
+        const content = text.slice(text.indexOf(":")+1); // if atColon is -1 => then .slice(0) => original text
         const highlights = highlightWords.filter(v => (/^[a-z0-9]+$/i).test(v));
-        const sectionInfo = book == 'bukhari' ? hadithSectionInfoOf(item.id) : { title: "", id: 0 };
+        const sectionInfo = book == 'bukhari' ? hadithSectionInfoOf(item.id) : {title: "", id: 0};
         const isFavorite = item.id in favoritesLocal ? favoritesLocal[item.id] : !!item.favorite_id;
         const props = {
             onAddFavorite,
@@ -431,18 +347,92 @@ export const HomeScreen = (options) => {
             onTagHadith: onShowTagHadithModal,
             isFavorite: isFavorite,
             id: item.id,
-            highlights,
-            cardTitle,
-            title: `${sectionInfo.id}. ${sectionInfo.title}`,
+            highlights, 
+            cardTitle, 
+            title: `${sectionInfo.id}. ${sectionInfo.title}`, 
             content,
             subtitle: `${bookNameOf(book)} (${id})`,
             extraData: !!favoritesLocal[item.id]
         }
-
-        return (<HadithCard {...props} />);
+        return (<HadithCard {...props}/>);
     }
 
-    return $screen();
+    return (
+        <ScreenWrapper>
+            <Surface elevation="2">
+                <Surface  style={{flexDirection: 'row'}}>
+                    <Searchbar
+                        style={[styles.searchbar, {flex:8}]}
+                        placeholder={isCategorySearch() ? $SEARCH_CATEGORY_PLACEHOLDER : $SEARCH_PLACEHOLDER}
+                        onChangeText={onChangeSearch}
+                        onIconPress={onSearch}
+                        onSubmitEditing={onSubmitEditing}
+                        value={searchQuery}
+                        loading={isSearching}
+                    />                    
+                    <View style={[styles.menuItemContainer, {flex: 2}]}>
+                        <Switch value={locale == 'ara'} onValueChange={(b) => onUpdateLocale(b ? 'ara' : 'eng')} />
+                        <Text variant="labelLarge">{$LANGSHORT}</Text>
+                    </View>
+                </Surface>
+                <SegmentedButtons
+                        value={searchType}
+                        onValueChange={v => setSearchType(v==searchType ? "" : v)}
+                        buttons={[
+                        { value: CATEGORY, label: $SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true},
+                        { value: FAVORITES, label: $SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true},
+                        { value: TAGS, label: $SEGBUTTONS_TAGS, icon: 'tag-outline', onPress: onPressTags, showSelectedCheck: true },
+                        ]}
+                    />
+                {(resultHeaderError.length > 0) ? 
+                    (<Surface elevation="4" style={[styles.resultHeader, styles.resultHeaderError]}>
+                        <Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{resultHeaderError}</Title>
+                    </Surface>) : null
+                }
+                <Surface style={{flexDirection: 'row', marginRight:5}}>
+                    <Text style={{flex: 2, textAlign:'right', marginRight:4}}>({hadiths.length}/{hadithsTotal})</Text>
+                </Surface>
+            </Surface>
+                {hadiths.length == 0 && !isSearching ?
+                    <SectionsSurface 
+                        containerStyle={styles.modalContainer} 
+                        book="bukhari"
+                        onPressItem={onCategoriesSelected} /> : null
+                }
+
+            <FlatList
+                data={["start", ...hadiths, "end"]}
+                keyExtractor={(item, i) => i}
+                renderItem={renderHadithCard}
+                onEndReached={onScrollToEnd}
+                onEndReachedThreshold={1}
+            />
+
+            <SectionsModal 
+                visible={showSectionModal} 
+                containerStyle={styles.modalContainer} 
+                book="bukhari"
+                onDismiss={onCategoriesSelected} />
+            <TagsModal 
+                title={$TAG_SEARCH_MODAL_TITLE}
+                visible={showTagsModal} 
+                containerStyle={styles.modalContainer} 
+                tags={knownTags}
+                onDeleteTag={onDeleteTag}
+                onAddTag={onNewTag}
+                onDismiss={onTagsSelected} />
+            <TagsModal 
+                title={$TAG_MODAL_TITLE}
+                visible={showHadithTagsModal} 
+                containerStyle={styles.modalContainer} 
+                hadithId={hadithIdToTag}
+                tags={knownTags}
+                hadithTags={tagsOfHadithIdToTag}
+                onAddTag={onNewTag}
+                onDismiss={onHadithTagsSelected} 
+                onToggleItem={onToggleHadithTag}/>
+        </ScreenWrapper>
+    );
 };
 
 const makeStyles = (colors) => StyleSheet.create({
@@ -452,7 +442,7 @@ const makeStyles = (colors) => StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         paddingHorizontal: 12,
-    },
+      },
     chip: {
         margin: 4
     },
@@ -464,12 +454,12 @@ const makeStyles = (colors) => StyleSheet.create({
         paddingBottom: 30
     },
     resultHeaderText: {
-        padding: 5
+        padding:5
     },
     resultHeaderTextError: {
         color: colors.error,
     },
-    resultHeader: {
+    resultHeader: { 
         alignItems: 'center',
     },
     resultHeaderError: {
@@ -477,10 +467,10 @@ const makeStyles = (colors) => StyleSheet.create({
     },
     resultHeaderOk: {
         backgroundColor: colors.primaryContainer,
-    },
+    }, 
     menuItemContainer: {
-        justifyContent: 'flex-start',
-        flexDirection: 'row',
+        justifyContent:'flex-start', 
+        flexDirection: 'row', 
         alignItems: 'center'
     }
 });

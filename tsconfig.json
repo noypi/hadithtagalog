@@ -1,10 +1,14 @@
 {
     "compilerOptions": {
-        "rootDir": "./"
+        "rootDir": "./",
+        // fix import "* as"
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
     },
     "extends": "expo/tsconfig.base",
     "include": [
         "**/*.ts",
-        "**/*.tsx"
+        "**/*.tsx",
+        "src/config/index.js"
     ]
 }
