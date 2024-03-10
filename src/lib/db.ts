@@ -3,10 +3,9 @@
 import * as FileSystem from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 import { Asset } from 'expo-asset';
-import { SECTION_FIRST, SECTION_LAST } from '@data';
-import { splitHadithId } from './data';
+import { SECTION_FIRST, SECTION_LAST } from "@lib/enums";
+import { split_hadith_id } from './utils';
 
-const getTranslator = (lang = $$LOCALE) => ({ 'fil': 'google_tl', 'eng': 'srceng', 'ara': 'srcara' }[lang]);
 export const QUERY_STEP = 25;
 
 // async function openDatabase(pathToDatabaseFile: string, name: string): Promise<SQLite.WebSQLDatabase> {
@@ -131,26 +130,6 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
         }
     }
 
-    async function addHadithTag(hadithid: string, tag: string) {
-        let [book, id] = splitHadithId(hadithid);
-        console.debug({ book, id });
-        db.transaction((tx) => {
-            let query = "INSERT INTO tags(tag, book, idint) VALUES(?, ?, ?)";
-            tx.executeSql(query, [tag, book, id], (tx, results) => {
-                //console.debug({results});
-            }, errorCB())
-        });
-    }
-
-    async function removeHadithTag(hadithid: string, tag: string) {
-        let [book, id] = splitHadithId(hadithid);
-        db.transaction((tx) => {
-            let query = "DELETE FROM tags WHERE tag = ? AND book = ? AND idint = ?";
-            tx.executeSql(query, [tag, book, id], (tx, results) => {
-            }, errorCB())
-        });
-    }
-
     async function delTagAndUnTagHadiths(tag: string) {
         db.transaction((tx) => {
             let query1 = "DELETE FROM tags_meta WHERE tag_id IN (SELECT rowid FROM tags_list WHERE tag = ?);";
@@ -165,7 +144,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function getHadithTags(hadithId: string) {
-        let [book, id] = splitHadithId(hadithId);
+        let [book, id] = split_hadith_id(hadithId);
         let query = "SELECT tag FROM tags WHERE book = ? AND idint = ?";
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
@@ -229,7 +208,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
     async function addFavorite(hadithid: string) {
         console.debug("+-addFavorite()", { hadithid });
-        let [book, id] = splitHadithId(hadithid);
+        let [book, id] = split_hadith_id(hadithid);
         console.debug({ book, id });
         db.transaction((tx) => {
             let query = "INSERT INTO favorites_list(hadiths_meta_rowid) SELECT hadiths.metarowid FROM hadiths WHERE book = ? AND idint = ?";
@@ -240,7 +219,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function removeFavorite(hadithid: string) {
-        let [book, id] = splitHadithId(hadithid);
+        let [book, id] = split_hadith_id(hadithid);
         db.transaction((tx) => {
             let query = "DELETE FROM favorites_list WHERE hadiths_meta_rowid in (SELECT hadiths.metarowid FROM hadiths WHERE book = ? AND idint = ?)";
             tx.executeSql(query, [book, id], (tx, results) => {
@@ -390,7 +369,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
 
     async function getByID(id: string, lang: string = $$LOCALE) {
         //console.debug("getByID", {id, lang});
-        let [book, idint] = splitHadithId(id);
+        let [book, idint] = split_hadith_id(id);
         const q = new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 tx.executeSql('SELECT * FROM translations WHERE idint = ? AND translator = ? AND book = ?', [idint, getTranslator(lang), book],
@@ -412,7 +391,7 @@ export const openHadithsDb: any = async (name: string, readOnly: boolean = false
     }
 
     async function setContent(id: string, content: string) {
-        let [book, idint] = splitHadithId(id);
+        let [book, idint] = split_hadith_id(id);
         let result = null;
 
         await db.transaction((tx) => {

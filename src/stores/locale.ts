@@ -1,7 +1,8 @@
 import { action, computed, observable } from "mobx";
 import _ from 'lodash';
 import lang_map from '@data/json/lang.json';
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { computed_property } from "@lib";
 
 export type Lang = 'fil' | 'eng' | 'ara';
 
@@ -21,18 +22,9 @@ const store = new LocaleStore();
 export default store;
 
 export function useLocaleStore() {
-    const [$tk, setTk] = useState(store.tk);
-    const [$lang, setLang] = useState(store.lang);
-
-    useEffect(() => {
-        setTk(store.tk);
-        setLang(store.locale);
-
-    }, [store.locale]);
-
     return {
-        $tk,
-        $lang,
+        $tk: computed_property(store.tk),
+        $lang: computed_property(store.locale),
     };
 }
 

@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "rootDir": "./",
+        "baseUrl": ".",
         // fix import "* as"
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,

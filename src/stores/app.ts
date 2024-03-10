@@ -2,6 +2,7 @@ import { Appearance } from "react-native";
 import { action, computed, observable } from "mobx";
 import { greenTheme, greenDarkTheme } from '@data/theme';
 import { useEffect, useState } from "react";
+import { computed_property } from "@lib";
 
 class AppStore {
     @computed get theme() {
@@ -20,17 +21,8 @@ const store = new AppStore();
 export default store;
 
 export function useAppStore() {
-    const [$colors, setColors] = useState(store.theme.colors);
-    const [$theme, setTheme] = useState(store.theme);
-
-    useEffect(() => {
-        setColors(store.theme.colors);
-        setTheme(store.theme);
-
-    }, [store.theme]);
-
     return {
-        $colors,
-        $theme
+        $colors: computed_property(store.theme.colors),
+        $theme: computed_property(store.theme)
     };
 }

@@ -60,8 +60,11 @@ class ClientExpoSQLite extends ClientSQLite3 {
     async _exec_async(connection, sql, args, read_only) {
         return new Promise((resolve, reject) => {
             connection._db.exec([{ sql, args }], read_only, (err, result) => {
+                if (err) {
+                    console.error(err);
+                }
                 const res = result[0];
-                resolve(res?.rows);
+                resolve(res?.rows ?? {});
             });
         })
     }
