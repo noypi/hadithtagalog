@@ -55,7 +55,7 @@ class HadithsDB {
     }
 
     async get_selected_ranges(selected, opts = {}) {
-        console.log('+getSelectedRanges()');
+        console.log('+getSelectedRanges()', { lang: $locale.locale });
         return await this.get_selected_ranges0(selected, opts);
     }
 
@@ -206,13 +206,15 @@ class HadithsDB {
 
     async del_tag_and_untag_hadiths(tag: string) {
         await $db.knex(Table.tags_meta)
-            .whereIn({
-                tag_id: $db.knex(Table.tags_list).where({ tag }).select('rowid')
-            })
+            .whereIn(
+                'tag_id',
+                $db.knex(Table.tags_list).where({ tag }).select('rowid')
+            )
             .del();
 
-        await $db.knex(Table.tags)
-            .where({ tag });
+        await $db.knex(Table.tags_list)
+            .where({ tag })
+            .del();
     }
 
     async new_tag(tag: string) {
@@ -233,11 +235,13 @@ class HadithsDB {
     }
 
     async get_favorites() {
+        console.debug('+get_favorites()');
         const query = $db.knex(Table.translations)
-            .whereIn({
-                hadiths_meta_rowid: $db.knex(Table.favorites)
+            .whereIn(
+                'hadiths_meta_rowid',
+                $db.knex(Table.favorites_list)
                     .select('hadiths_meta_rowid')
-            })
+            )
             .where({ translator: this.translator });
 
         return await this.execute_gen_query(query);
@@ -246,7 +250,7 @@ class HadithsDB {
     async add_favorite(hadithid: string) {
         console.debug("+-addFavorite()", { hadithid });
         let [book, id] = split_hadith_id(hadithid);
-        console.debug({ book, id });
+
         return $db.knex(Table.favorites_list)
             .insert({
                 hadiths_meta_rowid: $db.knex(Table.hadiths)
@@ -259,11 +263,12 @@ class HadithsDB {
         let [book, id] = split_hadith_id(hadithid);
 
         return $db.knex(Table.favorites_list)
-            .where({
-                hadiths_meta_rowid: $db.knex(Table.hadiths)
+            .where(
+                'hadiths_meta_rowid',
+                $db.knex(Table.hadiths)
                     .select('metarowid')
                     .where({ book, idint: id })
-            })
+            )
             .del();
     }
 

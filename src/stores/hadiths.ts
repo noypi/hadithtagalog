@@ -5,7 +5,12 @@ class HadithStore {
     @observable list = [];
     @observable total = 0;
     @observable done = false;
+
     result_generator = null;
+    last_query = {
+        function: '',
+        params: [],
+    }
 
     constructor() {
         makeObservable(this);
@@ -16,13 +21,19 @@ class HadithStore {
     }
 
     @action async update(selected) {
-        console.log(' update ', { selected });
+        this.last_query.function = 'update';
+        this.last_query.params = [selected];
+
+        console.debug(' update ', { selected });
         this.reset();
         this.result_generator = await $db.get_selected_ranges(selected);
         await this.load_more();
     }
 
     @action async search(params) {
+        this.last_query.function = 'search';
+        this.last_query.params = [params];
+
         this.reset();
         let by_ids_result = { translations: [], total: 0 };
         if (params.match_ids?.length) {
@@ -43,20 +54,36 @@ class HadithStore {
     }
 
     @action async update_favorites() {
+        this.last_query.function = 'update_favorites';
+        this.last_query.params = [];
+
+        console.debug('update_favorites');
         this.reset();
         this.result_generator = await $db.get_favorites();
         await this.load_more();
     }
 
     @action async update_tagged(tags: string[]) {
+        this.last_query.function = 'update_tagged';
+        this.last_query.params = [tags];
+
         this.reset();
         this.result_generator = await $db.get_tagged(tags);
         await this.load_more();
     }
 
+    @action async repeat_last_query() {
+        if (!this.list.length) {
+            this.last_query.function = '';
+            this.last_query.params = [];
+            return;
+        }
+        console.log('repeat_last_query');
+        await this[this.last_query.function].bind(this)(...this.last_query.params);
+    }
+
     @action async load_more() {
         const { done, value } = await this.result_generator.next();
-        console.debug({ done, value });
         if (done) {
             this.done = true;
             return;

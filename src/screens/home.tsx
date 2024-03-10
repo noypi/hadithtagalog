@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, FlatList, View, Linking } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { StyleSheet, FlatList, View } from 'react-native';
+import Svg, {
+    Image,
+} from 'react-native-svg';
 import _ from 'lodash';
-import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton } from 'react-native-paper';
+import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton, Icon } from 'react-native-paper';
 import { hadithSectionInfoOf, bookNameOf, booksMap } from '@data/';
 import { QUERY_STEP, ref, split_hadith_id, watch } from '@lib/';
 
@@ -9,6 +12,10 @@ import $app, { useAppStore } from '@stores/app';
 import $locale, { useLocaleStore } from '@stores/locale';
 import $hadiths from '@stores/hadiths';
 import $db from '@stores/hadiths_db';
+
+import SvgFlagPh from 'src/data/svg/ic_flag_ph.svg';
+import SvgFlagUs from 'src/data/svg/ic_flag_us.svg';
+import SvgFlagSaudi from 'src/data/svg/ic_flag_saudi.svg';
 
 import { ScreenWrapper } from './screenwrapper';
 import { HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog } from './components';
@@ -22,7 +29,6 @@ const TAGS = 'tags';
 const FBGGROUP = 'https://web.facebook.com/groups/833486274413858';
 
 export const HomeScreen = (options) => {
-
     const $screen = () => (
         <ScreenWrapper>
             <Surface elevation={2}>
@@ -31,24 +37,19 @@ export const HomeScreen = (options) => {
                         style={[styles.searchbar, { flex: 8 }]}
                         placeholder={is_category_search ? $tk.SEARCH_CATEGORY_PLACEHOLDER : $tk.SEARCH_PLACEHOLDER}
                         onChangeText={query => search_query.value = query}
-                        onIconPress={on_search}
-                        onSubmitEditing={on_search}
+                        onIconPress={() => setTimeout(on_search)}
+                        onSubmitEditing={() => setTimeout(on_search)}
                         value={search_query.value}
                         loading={searchingf.value}
                     />
                     <View style={[styles.menuItemContainer, { flex: 2 }]}>
-                        <Switch value={$lang == 'ara'} onValueChange={(b) => onUpdateLocale(b ? 'ara' : 'eng')} />
-                        <Text variant="labelLarge">{$tk.LANGSHORT}</Text>
+                        {flag_icon.value}
                     </View>
                 </Surface>
                 <SegmentedButtons
                     value={search_type.value}
                     onValueChange={v => search_type.value = (v === search_type.value ? '' : v)}
-                    buttons={[
-                        { value: CATEGORY, label: $tk.SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: true },
-                        { value: FAVORITES, label: $tk.SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: true },
-                        { value: TAGS, label: $tk.SEGBUTTONS_TAGS, icon: 'tag-outline', onPress: onPressTags, showSelectedCheck: true },
-                    ]}
+                    buttons={menu_buttons}
                 />
                 {(result_header_error.value.length > 0) ?
                     (<Surface elevation={4} style={[styles.resultHeader, styles.resultHeaderError]}>
@@ -59,7 +60,7 @@ export const HomeScreen = (options) => {
                     <Text style={{ flex: 2, textAlign: 'right', marginRight: 4 }}>({$hadiths.count}/{$hadiths.total})</Text>
                 </Surface>
             </Surface>
-            {$hadiths.list.length == 0 && !searchingf.value ?
+            {$hadiths.count === 0 && !searchingf.value ?
                 <SectionsSurface
                     containerStyle={styles.modalContainer}
                     book="bukhari"
@@ -68,7 +69,7 @@ export const HomeScreen = (options) => {
 
             <FlatList
                 data={['start', ...$hadiths.list, 'end']}
-                keyExtractor={(item, i) => i}
+                keyExtractor={(item) => `${$locale.locale}-${item?.id ?? item}`}
                 renderItem={render_hadith_card}
                 onEndReached={onScrollToEnd}
                 onEndReachedThreshold={1}
@@ -115,7 +116,7 @@ export const HomeScreen = (options) => {
 
     const selected_categories = ref<any>([]);
     const searchingf = useFlag(false);
-    const known_tags = ref<string[]>([]);
+    const known_tags = ref([]);
     const favorites_local = ref<any>({});
 
     const section_modal_visible = ref(false);
@@ -126,19 +127,41 @@ export const HomeScreen = (options) => {
     const is_category_search = watch(search_type, v => v === CATEGORY);
     const is_favorite_search = watch(search_type, v => v === FAVORITES);
     const is_tag_search = watch(search_type, v => v === TAGS);
-    const search_words = watch(search_query.value, v => v.split(' ').filter(word => word.length > 0));
-    const highlighted_words = watch(search_words.value, v => v);
+    const search_words = watch(search_query.value, v => v.split(' ').filter(word => word.trim().length > 0));
+    const highlighted_words = []; //watch(search_words, v => v);
 
     const tags_of_hadith_id_to_tag = ref([]);
     const hadith_id_to_tag = ref('');
 
-    const onBeforePressSearchType = () => {
+    const flag_icons = {
+        //'ara': (<SvgFlagSaudi width={120} height={40} onPress={onPressedFlag} />),
+        'fil': (<SvgFlagPh width={120} height={40} onPress={onPressedFlag} />),
+        'eng': (<SvgFlagUs width={120} height={40} onPress={onPressedFlag} />),
+    };
+
+    const flag_icon = ref<any>(flag_icons[$locale.locale]);
+
+    const menu_buttons = useMemo(() => [
+        { value: CATEGORY, label: $tk.SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: is_category_search },
+        { value: FAVORITES, label: $tk.SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: is_favorite_search },
+        { value: TAGS, label: $tk.SEGBUTTONS_TAGS, icon: 'file-cabinet', onPress: onPressTags, showSelectedCheck: is_tag_search },
+    ], [search_type.value, $locale.locale]);
+
+    async function onPressedFlag() {
+        const langs = Object.keys(flag_icons);
+        const index = langs.indexOf($locale.locale);
+        $locale.set_locale(langs[index + 1] ?? langs[0]);
+        flag_icon.value = flag_icons[$locale.locale];
+        setTimeout(async () => await $hadiths.repeat_last_query());
+    }
+
+    function onBeforePressSearchType() {
         result_header_error.value = '';
     };
 
     async function on_search() {
-        console.debug('+-on_search()');
-        const words = search_words.value;
+        console.debug('+-on_search()', { search_words, search_query: search_query.value });
+        const words = search_words || [];
         result_header.value = '';
         result_header_error.value = '';
 
@@ -163,7 +186,7 @@ export const HomeScreen = (options) => {
             //  - integer ids on search bar
             //  - hadith content
             //  - selected categories on search
-            const totals = await $hadiths.search({ match_ids, match_content, match_books, selected: is_category_search ? selectedCategories : null });
+            const totals = await $hadiths.search({ match_ids, match_content, match_books, selected: null });
             has_search_result = !!totals.search_total;
         });
 
@@ -231,26 +254,30 @@ export const HomeScreen = (options) => {
         return null;
     }
 
-    const onPressCategories = () => {
+    function onPressCategories() {
         console.debug('onPressCategories', { search_type: search_type.value });
         onBeforePressSearchType();
-        if (!is_category_search) {
-            section_modal_visible.value = true;
-        } else {
-            $hadiths.reset();
-            search_type.value = '';
-            selected_categories.value = {};
-        }
+        // if (!is_category_search) {
+        //     section_modal_visible.value = true;
+        // } else {
+        //     $hadiths.reset();
+        //     search_type.value = '';
+        //     selected_categories.value = {};
+        // }
+        $hadiths.reset();
+        search_type.value = '';
+        selected_categories.value = {};
     }
 
-    const updateKnownTags = async (sortfn: (a: string, b: string) => void = () => { }) => {
+    const updateKnownTags = async (sortfn?: (a: string, b: string) => number) => {
         let tags = await $db.get_tags();
-        console.debug('updateKnownTags', { tags });
-        tags = tags.sort();
-        known_tags.value = tags.sort(sortfn);
+        console.debug('updateKnownTags', { tags, sortfn });
+        tags = tags.map(v => v.tag).sort();
+        known_tags.value = sortfn ? tags.sort(sortfn) : tags;
     }
 
     async function onPressTags() {
+        console.log('onPressTags');
         onBeforePressSearchType();
         if (!is_tag_search) {
             await updateKnownTags();
@@ -347,10 +374,6 @@ export const HomeScreen = (options) => {
     async function onRemoveFavorite(id) {
         await $db.remove_favorite(id);
         favorites_local.value = Object.assign({}, favorites_local.value, { [id]: false });
-    }
-
-    function onUpdateLocale(locale) {
-        $locale.set_locale(locale);
     }
 
     function render_hadith_card(item) {

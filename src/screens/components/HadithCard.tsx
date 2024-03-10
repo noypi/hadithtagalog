@@ -48,10 +48,10 @@ export const HadithCard = ({ id, isFavorite, title, subtitle, content, cardTitle
             </View>
         </Card.Content>
         <Card.Actions>
-            <IconButton icon="page-next-outline"
+            {/*<IconButton icon="page-next-outline"
                 iconColor={$colors.primary}
                 containerColor={$colors.surface}
-                onPress={() => navigation.getParent('MainStackNavigator').navigate('ReadMore', { id, content, title: cardTitle, bookref: subtitle, isFavorite })} />
+            onPress={() => navigation.getParent('MainStackNavigator').navigate('ReadMore', { id, content, title: cardTitle, bookref: subtitle, isFavorite })} />*/}
 
             <IconButton icon="content-copy"
                 iconColor={$colors.primary}
@@ -61,7 +61,7 @@ export const HadithCard = ({ id, isFavorite, title, subtitle, content, cardTitle
                     ToastAndroid.show($tk.TOAST_COPIED, ToastAndroid.SHORT);
                 }} />
 
-            <IconButton icon="tag-plus" iconColor={$colors.primary} containerColor={$colors.surface} onPress={() => onTagHadith(id)} />
+            <IconButton icon="playlist-plus" iconColor={$colors.primary} containerColor={$colors.surface} onPress={() => onTagHadith(id)} />
 
             {isFavorite ?
                 (<IconButton icon="star-minus" iconColor="gold" mode="flat" onPress={() => onRemoveFavorite(id)} />) :

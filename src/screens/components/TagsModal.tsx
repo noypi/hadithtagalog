@@ -3,20 +3,29 @@ import { useAppStore } from '@stores/app';
 import { useLocaleStore } from '@stores/locale';
 import * as React from 'react';
 import { StyleSheet, FlatList } from 'react-native';
-import { Modal, Portal, Text, Checkbox, IconButton, Surface, Title, TextInput, Linking, Button } from 'react-native-paper';
+import { Modal, Portal, Text, Checkbox, IconButton, Surface, Title, TextInput, Chip, Button } from 'react-native-paper';
 
 
 const TitledItem = ({ item, index, onPress, checked, onDeleteTag }) => {
     const $C = () => (<Surface style={isSelected ? backSelected : backNotSelected} elevation={2}>
-        <Checkbox
+        {/*<Checkbox
             status={isSelected ? 'checked' : 'unchecked'}
             onPress={() => {
                 setIsSelected(!isSelected);
                 onPress(item, index, !isSelected);
             }}
             styles={styles.checkbox}
-        />
-        <Text style={textStyle} key={index}>{item}</Text>
+        />*/}
+        <Chip style={styles.itemStyle} key={index}
+            mode="flat"
+            elevation={2}
+            onPress={() => {
+                setIsSelected(!isSelected);
+                onPress(item, index, !isSelected);
+            }}>
+            <Text style={textStyle} key={index}>{item}</Text>
+        </Chip>
+
         {!onDeleteTag ? null : <IconButton icon="trash-can-outline" size={18} onPress={() => onDeleteTag(item)} />}
     </Surface>);
 
@@ -52,8 +61,6 @@ export const TagsModal = ({ title, tags, visible, onDismiss, onAddTag, container
                             size={18} />
                     </Surface>
 
-                    {!hadithId ? null : <TagsList />}
-
                     <Surface style={styles.inputContainerStyle}>
                         <TextInput
                             onSubmitEditing={onAddTagLocal}
@@ -61,11 +68,11 @@ export const TagsModal = ({ title, tags, visible, onDismiss, onAddTag, container
                             label={$tk.TAG_INPUT_NEW_LABEL}
                             placeholder={$tk.TAG_INPUT_NEW_PLACEHOLDER}
                             style={styles.inputTagStyle}
-                            right={<TextInput.Icon icon="tag-plus" onPress={onAddTagLocal} />}
+                            right={<TextInput.Icon icon="playlist-plus" onPress={onAddTagLocal} />}
                         />
                     </Surface>
 
-                    {!hadithId ? <TagsList /> : null}
+                    <TagsList />
                 </Surface>
             </Modal>
         </Portal>
@@ -76,8 +83,6 @@ export const TagsModal = ({ title, tags, visible, onDismiss, onAddTag, container
     const { $tk } = useLocaleStore();
 
     const styles = watch($colors, v => makeStyles($colors));
-
-    const [selectedItems, setSelectedItems] = React.useState(new Array(tags.length).fill(false));
 
     let checkedItems = hadithTags?.reduce((prev, curr) => {
         prev[curr] = true;
@@ -103,6 +108,7 @@ export const TagsModal = ({ title, tags, visible, onDismiss, onAddTag, container
             delete checkedItems[item];
         }
         onToggleItem && onToggleItem(hadithId, item, isSelected);
+        onDismissModal();
         //console.debug({checkedItems});
     };
 

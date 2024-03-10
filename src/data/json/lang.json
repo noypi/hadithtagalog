@@ -39,9 +39,9 @@
         "fil": "Walang Paboritong Hadith"
     },
     SEARCH_TAGS_RESULT_MESSAGE: {
-        "ara": "Tagged Hadiths",
-        "eng": "Tagged Hadiths",
-        "fil": "Mga Hadiths na may Tag"
+        "ara": "From Cabinet",
+        "eng": "From Cabinet",
+        "fil": "Galing sa Kabinet"
     },
     SEARCH_TAGS_ZERO_RESULT_MESSAGE: {
         "ara": "No Tagged Hadith found",
@@ -66,17 +66,17 @@
     NO_FAVORITES_FOUND: {
         "ara": "No favorite Hadith found",
         "eng": "No favorite Hadith found",
-        "fil": "Walang paboritong hadith" 
+        "fil": "Walang paboritong hadith"
     },
     TAG_MODAL_TITLE: {
-        "ara": "Tag the Hadith",
-        "eng": "Tag the Hadith",
-        "fil": "e-Tag ang Hadith"
+        "ara": "Add to Cabinet",
+        "eng": "Add to Cabinet",
+        "fil": "Ilagay sa Kabinet"
     },
     TAG_SEARCH_MODAL_TITLE: {
-        "ara": "Search from Tags",
-        "eng": "Search from Tags",
-        "fil": "Maghanap galing sa Tags"
+        "ara": "Search from Cabinet",
+        "eng": "Search from Cabinet",
+        "fil": "Maghanap galing sa Kabinet"
     },
     CATEGORIES: {
         "ara": "Categories",
@@ -109,9 +109,9 @@
         "fil": "Paborito"
     },
     SEGBUTTONS_TAGS: {
-        "ara": "Tags",
-        "eng": "Tags",
-        "fil": "Tags"
+        "ara": "Cabinet",
+        "eng": "Cabinet",
+        "fil": "Kabinet"
     },
     MENU_FIL: {
         "ara": "tagalog",
@@ -139,14 +139,14 @@
         "fil": "Nakopya na!"
     },
     TAG_INPUT_NEW_LABEL: {
-        "ara": "New Tag",
-        "eng": "New Tag",
-        "fil": "Bagong Tag"
+        "ara": "Name of new Cabinet",
+        "eng": "Name of new Cabinet",
+        "fil": "Pangalan ng Bagong Kabinet"
     },
     TAG_INPUT_NEW_PLACEHOLDER: {
-        "ara": "Create new Tag",
-        "eng": "Create new Tag",
-        "fil": "Gumawa ng bagong Tag"
+        "ara": "Create new Cabinet",
+        "eng": "Create new Cabinet",
+        "fil": "Gumawa ng bagong Kabinet"
     },
     LANG: {
         "ara": "English",
