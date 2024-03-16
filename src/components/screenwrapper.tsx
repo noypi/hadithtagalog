@@ -1,8 +1,8 @@
 import * as React from 'react';
 import {
-  StyleSheet
+    StyleSheet
 } from 'react-native';
-import {Surface} from 'react-native-paper';
+import { Surface } from 'react-native-paper';
 
 export const ScreenWrapper = (props) => {
     const containerStyle = [
@@ -17,6 +17,5 @@ export const ScreenWrapper = (props) => {
 
 const styles = StyleSheet.create({
     container: {
-      flex: 1,
     },
-  });
+});

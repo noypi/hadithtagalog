@@ -7,26 +7,19 @@ import { Modal, Portal, Text, Checkbox, IconButton, Surface, Title, TextInput, C
 
 
 const TitledItem = ({ item, index, onPress, checked, onDeleteTag }) => {
-    const $C = () => (<Surface style={isSelected ? backSelected : backNotSelected} elevation={2}>
-        {/*<Checkbox
-            status={isSelected ? 'checked' : 'unchecked'}
-            onPress={() => {
-                setIsSelected(!isSelected);
-                onPress(item, index, !isSelected);
-            }}
-            styles={styles.checkbox}
-        />*/}
-        <Chip style={styles.itemStyle} key={index}
+    const $C = () => (<Surface className="" style={isSelected ? backSelected : backNotSelected} elevation={2}>
+        <Chip style={{ width: '82%' }} key={index}
+            className="ml-4 py-2"
             mode="flat"
             elevation={2}
             onPress={() => {
                 setIsSelected(!isSelected);
                 onPress(item, index, !isSelected);
             }}>
-            <Text style={textStyle} key={index}>{item}</Text>
+            <Text key={index}>{item}</Text>
         </Chip>
 
-        {!onDeleteTag ? null : <IconButton icon="trash-can-outline" size={18} onPress={() => onDeleteTag(item)} />}
+        {!onDeleteTag ? null : <IconButton className="" icon="trash-can-outline" size={24} onPress={() => onDeleteTag(item)} />}
     </Surface>);
 
     const [isSelected, setIsSelected] = React.useState(checked);
@@ -43,39 +36,22 @@ const TitledItem = ({ item, index, onPress, checked, onDeleteTag }) => {
     return $C();
 }
 
-export const TagsModal = ({ title, tags, visible, onDismiss, onAddTag, containerStyle, hadithId, hadithTags, onToggleItem, onDeleteTag }) => {
+export const TagsScene = ({ title, tags, visible, onDismiss, onAddTag, containerStyle, hadithId, hadithTags, onToggleItem, onDeleteTag }) => {
     const $C = () => (
-        <Portal style={{ alignItems: 'center' }}>
-            <Modal
-                useNativeDriver={true}
-                visible={visible}
-                onDismiss={onDismissModal}
-                contentContainerStyle={containerStyle}
-                style={{ height: '100%' }}>
-                <Surface style={styles.modalViewContainerStyle}>
-                    <Surface elevation={3} style={styles.titleContainerStyle}>
-                        <Title style={[styles.titleStyle, { flex: 1, textAlign: 'center' }]}>{title}</Title>
-                        <IconButton style={{ backgroundColor: 'white', color: $colors.primary }}
-                            icon="check-outline"
-                            onPress={onDismissModal}
-                            size={18} />
-                    </Surface>
+        <Surface style={styles.modalViewContainerStyle}>
+            <Surface style={styles.inputContainerStyle}>
+                <TextInput
+                    onSubmitEditing={onAddTagLocal}
+                    onChangeText={setInputValue}
+                    label={$tk.TAG_INPUT_NEW_LABEL}
+                    placeholder={$tk.TAG_INPUT_NEW_PLACEHOLDER}
+                    style={styles.inputTagStyle}
+                    right={<TextInput.Icon icon="playlist-plus" onPress={onAddTagLocal} />}
+                />
+            </Surface>
 
-                    <Surface style={styles.inputContainerStyle}>
-                        <TextInput
-                            onSubmitEditing={onAddTagLocal}
-                            onChangeText={setInputValue}
-                            label={$tk.TAG_INPUT_NEW_LABEL}
-                            placeholder={$tk.TAG_INPUT_NEW_PLACEHOLDER}
-                            style={styles.inputTagStyle}
-                            right={<TextInput.Icon icon="playlist-plus" onPress={onAddTagLocal} />}
-                        />
-                    </Surface>
-
-                    <TagsList />
-                </Surface>
-            </Modal>
-        </Portal>
+            <TagsList />
+        </Surface>
     );
 
     const [inputValue, setInputValue] = React.useState("");

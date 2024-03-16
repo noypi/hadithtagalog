@@ -1,8 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, FlatList, View } from 'react-native';
-import Svg, {
-    Image,
-} from 'react-native-svg';
+import { StyleSheet, FlatList, View, Dimensions } from 'react-native';
 import _ from 'lodash';
 import { Searchbar, ActivityIndicator, Surface, Text, Menu, IconButton, SegmentedButtons, Title, Divider, Button, Switch, RadioButton, Icon } from 'react-native-paper';
 import { hadithSectionInfoOf, bookNameOf, booksMap } from '@data/';
@@ -15,10 +12,10 @@ import $db from '@stores/hadiths_db';
 
 import SvgFlagPh from 'src/data/svg/ic_flag_ph.svg';
 import SvgFlagUs from 'src/data/svg/ic_flag_us.svg';
-import SvgFlagSaudi from 'src/data/svg/ic_flag_saudi.svg';
+//import SvgFlagSaudi from 'src/data/svg/ic_flag_saudi.svg';
 
-import { ScreenWrapper } from './screenwrapper';
-import { HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog } from './components';
+import { ScreenWrapper } from '../components/screenwrapper';
+import { HadithCard, SectionsModal, TagsModal, SectionsSurface, PopupDialog, TagsScene } from '../components';
 import { useFlag } from 'src/composables/flag';
 
 
@@ -30,57 +27,72 @@ const FBGGROUP = 'https://web.facebook.com/groups/833486274413858';
 
 export const HomeScreen = (options) => {
     const $screen = () => (
-        <ScreenWrapper>
-            <Surface elevation={2}>
-                <Surface style={{ flexDirection: 'row' }}>
-                    <Searchbar
-                        style={[styles.searchbar, { flex: 8 }]}
-                        placeholder={is_category_search ? $tk.SEARCH_CATEGORY_PLACEHOLDER : $tk.SEARCH_PLACEHOLDER}
-                        onChangeText={query => search_query.value = query}
-                        onIconPress={() => setTimeout(on_search)}
-                        onSubmitEditing={() => setTimeout(on_search)}
-                        value={search_query.value}
-                        loading={searchingf.value}
-                    />
-                    <View style={[styles.menuItemContainer, { flex: 2 }]}>
-                        {flag_icon.value}
-                    </View>
-                </Surface>
-                <SegmentedButtons
-                    value={search_type.value}
-                    onValueChange={v => search_type.value = (v === search_type.value ? '' : v)}
-                    buttons={menu_buttons}
-                />
-                {(result_header_error.value.length > 0) ?
-                    (<Surface elevation={4} style={[styles.resultHeader, styles.resultHeaderError]}>
-                        <Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{result_header_error.value}</Title>
-                    </Surface>) : null
-                }
-                <Surface style={{ flexDirection: 'row', marginRight: 5 }}>
-                    <Text style={{ flex: 2, textAlign: 'right', marginRight: 4 }}>({$hadiths.count}/{$hadiths.total})</Text>
-                </Surface>
-            </Surface>
-            {$hadiths.count === 0 && !searchingf.value ?
-                <SectionsSurface
-                    containerStyle={styles.modalContainer}
-                    book="bukhari"
-                    onPressItem={onCategoriesSelected} /> : null
-            }
+        <ScreenWrapper elevation={1} className="ma-0 pa-0">
+            <Surface className="flex flex-1 flex-col h-screen" elevation={0}>
+                <Surface className="flex" elevation={0}>
+                    <Surface className="flex-row" elevation={0}>
+                        <Searchbar
+                            elevation={2}
+                            className="mb-2 ml-4 flex-1"
+                            placeholder={is_category_search ? $tk.SEARCH_CATEGORY_PLACEHOLDER : $tk.SEARCH_PLACEHOLDER}
+                            onChangeText={query => search_query.value = query}
+                            onIconPress={() => setTimeout(on_search)}
+                            onSubmitEditing={() => setTimeout(on_search)}
+                            value={search_query.value}
+                            loading={searchingf.value}
+                        />
+                        <Surface className="items-end" style={{ width: 80 }} elevation={0}>
+                            <View className="items-end content-end">
+                                {flag_icon.value}
+                            </View>
+                            <View className="items-end">
+                                <Text className="items-end pr-3">{$hadiths.count}/{$hadiths.total}</Text>
+                            </View>
+                        </Surface>
+                    </Surface>
 
-            <FlatList
-                data={['start', ...$hadiths.list, 'end']}
-                keyExtractor={(item) => `${$locale.locale}-${item?.id ?? item}`}
-                renderItem={render_hadith_card}
-                onEndReached={onScrollToEnd}
-                onEndReachedThreshold={1}
-            />
+                    {(result_header_error.value.length > 0) ?
+                        (<Surface elevation={4} style={[styles.resultHeader, styles.resultHeaderError]}>
+                            <Title style={[styles.resultHeaderText, styles.resultHeaderTextError]}>{result_header_error.value}</Title>
+                        </Surface>) : null
+                    }
+                </Surface>
 
+                <Surface className="flex flex-grow" style={{ height: window_height - 182 }} elevation={0}>
+
+                    {$hadiths.count
+                        ? (<FlatList
+                            data={['start', ...$hadiths.list, 'end']}
+                            extraData={$locale.locale}
+                            keyExtractor={(item) => `${$locale.locale}-${item?.id ?? item}`}
+                            renderItem={render_hadith_card}
+                            onEndReached={on_scroll_to_end}
+                            onEndReachedThreshold={1}
+                        />)
+                        : is_tag_search
+                            ? (<TagsScene
+                                title={$tk.TAG_SEARCH_MODAL_TITLE}
+                                visible={tags_modal_visible.value}
+                                containerStyle={styles.modalContainer}
+                                tags={known_tags.value}
+                                onDeleteTag={onDeleteTag}
+                                onAddTag={onNewTag}
+                                onDismiss={onTagsSelected} />)
+                            : (<SectionsSurface
+                                containerStyle={styles.modalContainer}
+                                book="bukhari"
+                                onPressItem={onCategoriesSelected} />)
+                    }
+                </Surface>
+                {/*
             <SectionsModal
                 visible={section_modal_visible.value}
                 containerStyle={styles.modalContainer}
                 book="bukhari"
                 onDismiss={onCategoriesSelected} />
+        */}
 
+                {/*
             <TagsModal
                 title={$tk.TAG_SEARCH_MODAL_TITLE}
                 visible={tags_modal_visible.value}
@@ -99,8 +111,31 @@ export const HomeScreen = (options) => {
                 onAddTag={onNewTag}
                 onDismiss={onHadithTagsSelected}
                 onToggleItem={onToggleHadithTag} />
+        */}
 
-        </ScreenWrapper>
+                <TagsModal
+                    title={$tk.TAG_MODAL_TITLE}
+                    visible={hadith_tag_modal_visible.value}
+                    containerStyle={styles.modalContainer}
+                    hadithId={hadith_id_to_tag.value}
+                    tags={known_tags.value}
+                    hadithTags={tags_of_hadith_id_to_tag.value}
+                    onDeleteTag={onDeleteTag}
+                    onAddTag={onNewTag}
+                    onDismiss={onHadithTagsSelected}
+                    onToggleItem={onToggleHadithTag} />
+
+                <Surface className="flex px-2">
+                    <SegmentedButtons
+                        value={search_type.value}
+                        onValueChange={v => search_type.value = (v === search_type.value ? '' : v)}
+                        buttons={menu_buttons}
+                    />
+
+                </Surface>
+
+            </Surface>
+        </ScreenWrapper >
     );
 
 
@@ -108,6 +143,7 @@ export const HomeScreen = (options) => {
     const { $theme, $colors } = useAppStore();
     const { $tk, $lang } = useLocaleStore();
     const styles = watch($colors, v => makeStyles(v));
+    const window_height = Dimensions.get('window').height;
 
     const search_type = ref('');
     const search_query = ref('');
@@ -118,18 +154,17 @@ export const HomeScreen = (options) => {
     const searchingf = useFlag(false);
     const known_tags = ref([]);
     const favorites_local = ref<any>({});
+    const highlighted_words = []; //watch(search_words, v => v);
 
     const section_modal_visible = ref(false);
     const tags_modal_visible = ref(false);
     const hadith_tag_modal_visible = ref(false);
 
     const is_light_mode = watch($app.is_dark, v => !v);
-    const is_category_search = watch(search_type, v => v === CATEGORY);
-    const is_favorite_search = watch(search_type, v => v === FAVORITES);
-    const is_tag_search = watch(search_type, v => v === TAGS);
+    const is_category_search = watch(search_type.value, v => v === CATEGORY);
+    const is_favorite_search = watch(search_type.value, v => v === FAVORITES);
+    const is_tag_search = watch(search_type.value, v => v === TAGS);
     const search_words = watch(search_query.value, v => v.split(' ').filter(word => word.trim().length > 0));
-    const highlighted_words = []; //watch(search_words, v => v);
-
     const tags_of_hadith_id_to_tag = ref([]);
     const hadith_id_to_tag = ref('');
 
@@ -142,9 +177,9 @@ export const HomeScreen = (options) => {
     const flag_icon = ref<any>(flag_icons[$locale.locale]);
 
     const menu_buttons = useMemo(() => [
-        { value: CATEGORY, label: $tk.SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: onPressCategories, showSelectedCheck: is_category_search },
-        { value: FAVORITES, label: $tk.SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: onPressFavorites, showSelectedCheck: is_favorite_search },
-        { value: TAGS, label: $tk.SEGBUTTONS_TAGS, icon: 'file-cabinet', onPress: onPressTags, showSelectedCheck: is_tag_search },
+        { value: CATEGORY, label: $tk.SEGBUTTONS_CATEGORY, icon: 'format-list-numbered', onPress: on_press_categories, showSelectedCheck: is_category_search },
+        { value: FAVORITES, label: $tk.SEGBUTTONS_FAVORITES, icon: 'star-outline', onPress: on_press_favorites, showSelectedCheck: is_favorite_search },
+        { value: TAGS, label: $tk.SEGBUTTONS_TAGS, icon: 'file-cabinet', onPress: on_press_tags, showSelectedCheck: is_tag_search },
     ], [search_type.value, $locale.locale]);
 
     async function onPressedFlag() {
@@ -155,9 +190,34 @@ export const HomeScreen = (options) => {
         setTimeout(async () => await $hadiths.repeat_last_query());
     }
 
+    watch($locale.locale, v => {
+        $hadiths.reset();
+        return false;
+    });
+
     function onBeforePressSearchType() {
         result_header_error.value = '';
     };
+
+    async function on_press_favorites() {
+        onBeforePressSearchType();
+        if (!is_favorite_search) {
+            await searchingf.execute(async () => {
+                await $hadiths.update_favorites();
+                favorites_local.value = {};
+            });
+
+            if ($hadiths.count > 0) {
+                result_header.value = $tk.SEARCH_FAVORITES_RESULT_MESSAGE;
+            } else {
+                result_header_error.value = $tk.SEARCH_FAVORITES_ZERO_RESULT_MESSAGE;
+                search_type.value = '';
+            }
+        } else {
+            $hadiths.reset();
+            search_type.value = '';
+        }
+    }
 
     async function on_search() {
         console.debug('+-on_search()', { search_words, search_query: search_query.value });
@@ -204,16 +264,7 @@ export const HomeScreen = (options) => {
         }
     }
 
-    const onScrollToEnd = async () => {
-        console.debug('+onScrollToEnd')
-
-        await searchingf.execute(async () => {
-            console.debug('onScrollToEnd..');
-            await $hadiths.load_more();
-        });
-    }
-
-    const onCategoriesSelected = async (selected) => {
+    async function onCategoriesSelected(selected) {
         console.debug('+-onCategoriesSelected() =>', selected);
         result_header.value = '';
         result_header_error.value = '';
@@ -238,32 +289,9 @@ export const HomeScreen = (options) => {
         }
     }
 
-    const renderHadithCardStart = () => {
-        //console.log('renderHadithCardStart', {isResultGenDone});
-        if (result_header.value.length > 0) {
-            return (<Surface elevation={4} style={[styles.resultHeader]}><Title style={styles.resultHeaderText}>{result_header.value}</Title></Surface>);
-        }
-        return null;
-    }
-
-    const renderHadithCardEnd = () => {
-        //console.log('renderHadithCardEnd', {isResultGenDone});
-        if (!$hadiths.done && $hadiths.count >= QUERY_STEP) {
-            return (<ActivityIndicator animating={true} size="large" style={{ marginBottom: 40 }} />)
-        }
-        return null;
-    }
-
-    function onPressCategories() {
+    function on_press_categories() {
         console.debug('onPressCategories', { search_type: search_type.value });
         onBeforePressSearchType();
-        // if (!is_category_search) {
-        //     section_modal_visible.value = true;
-        // } else {
-        //     $hadiths.reset();
-        //     search_type.value = '';
-        //     selected_categories.value = {};
-        // }
         $hadiths.reset();
         search_type.value = '';
         selected_categories.value = {};
@@ -276,8 +304,9 @@ export const HomeScreen = (options) => {
         known_tags.value = sortfn ? tags.sort(sortfn) : tags;
     }
 
-    async function onPressTags() {
+    async function on_press_tags() {
         console.log('onPressTags');
+        $hadiths.reset();
         onBeforePressSearchType();
         if (!is_tag_search) {
             await updateKnownTags();
@@ -336,51 +365,36 @@ export const HomeScreen = (options) => {
         }
     }
 
-    async function onShowTagHadithModal(id) {
-        let tags: Array<string> = await $db.get_hadith_tags(id);
-        console.debug('onShowTagHadithModal', { tags });
-        // pass sortfn to place selected first in order
-        await updateKnownTags((a: string, b: string) => tags.indexOf(a) < 0 ? 1 : tags.indexOf(b) < 0 ? -1 : a.localeCompare(b));
-        tags_of_hadith_id_to_tag.value = tags;
-        hadith_id_to_tag.value = id;
-        hadith_tag_modal_visible.value = true;
-    }
-
-    async function onPressFavorites() {
-        onBeforePressSearchType();
-        if (!is_favorite_search) {
-            await searchingf.execute(async () => {
-                await $hadiths.update_favorites();
-                favorites_local.value = {};
-            });
-
-            if ($hadiths.count > 0) {
-                result_header.value = $tk.SEARCH_FAVORITES_RESULT_MESSAGE;
-            } else {
-                result_header_error.value = $tk.SEARCH_FAVORITES_ZERO_RESULT_MESSAGE;
-                search_type.value = '';
-            }
-        } else {
-            $hadiths.reset();
-            search_type.value = '';
+    function render_hadith_start() {
+        //console.log('renderHadithCardStart', {isResultGenDone});
+        if (result_header.value.length > 0) {
+            return (<Surface elevation={4} style={[styles.resultHeader]}><Title style={styles.resultHeaderText}>{result_header.value}</Title></Surface>);
         }
+        return null;
     }
 
-    async function onAddFavorite(id) {
-        await $db.add_favorite(id);
-        favorites_local.value = Object.assign({}, favorites_local.value, { [id]: true });
+    function render_hadith_end() {
+        //console.log('renderHadithCardEnd', {isResultGenDone});
+        if (!$hadiths.done && $hadiths.count >= QUERY_STEP) {
+            return (<ActivityIndicator animating={true} size="large" style={{ marginBottom: 40 }} />)
+        }
+        return null;
     }
 
-    async function onRemoveFavorite(id) {
-        await $db.remove_favorite(id);
-        favorites_local.value = Object.assign({}, favorites_local.value, { [id]: false });
+    async function on_scroll_to_end() {
+        console.debug('+onScrollToEnd')
+
+        await searchingf.execute(async () => {
+            console.debug('onScrollToEnd..');
+            await $hadiths.load_more();
+        });
     }
 
     function render_hadith_card(item) {
         item = item.item;
 
-        if (item === 'start') { return renderHadithCardStart() }
-        else if (item === 'end') { return renderHadithCardEnd() }
+        if (item === 'start') { return render_hadith_start() }
+        else if (item === 'end') { return render_hadith_end() }
 
         if (!item || !item.content) {
             return null;
@@ -395,9 +409,9 @@ export const HomeScreen = (options) => {
         const sectionInfo = book == 'bukhari' ? hadithSectionInfoOf(item.id) : { title: '', id: 0 };
         const is_favorite = _.get(favorites_local.value, item.id, !!item.favorite_id);
         const props = {
-            onAddFavorite,
-            onRemoveFavorite,
-            onTagHadith: onShowTagHadithModal,
+            onAddFavorite: on_add_favorite,
+            onRemoveFavorite: on_remove_favorite,
+            onTagHadith: on_show_tag_hadith_modal,
             isFavorite: is_favorite,
             id: item.id,
             highlights,
@@ -410,6 +424,27 @@ export const HomeScreen = (options) => {
 
         return (<HadithCard {...props} />);
     }
+
+    async function on_add_favorite(id) {
+        await $db.add_favorite(id);
+        favorites_local.value = Object.assign({}, favorites_local.value, { [id]: true });
+    }
+
+    async function on_remove_favorite(id) {
+        await $db.remove_favorite(id);
+        favorites_local.value = Object.assign({}, favorites_local.value, { [id]: false });
+    }
+
+    async function on_show_tag_hadith_modal(id) {
+        let tags: Array<string> = await $db.get_hadith_tags(id);
+        console.debug('onShowTagHadithModal', { tags });
+        // pass sortfn to place selected first in order
+        await updateKnownTags((a: string, b: string) => tags.indexOf(a) < 0 ? 1 : tags.indexOf(b) < 0 ? -1 : a.localeCompare(b));
+        tags_of_hadith_id_to_tag.value = tags;
+        hadith_id_to_tag.value = id;
+        hadith_tag_modal_visible.value = true;
+    }
+
 
     return $screen();
 };

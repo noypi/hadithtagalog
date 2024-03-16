@@ -3,7 +3,7 @@ import { StyleSheet, View, Text as RNText, ToastAndroid, ScrollView } from 'reac
 import { Surface, Text, Portal, IconButton, SegmentedButtons, Chip, Button, Switch } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
 
-import { ScreenWrapper } from './screenwrapper';
+import { ScreenWrapper } from '../components/screenwrapper';
 
 
 export const ReadMoreScreen = ({ navigation, route }) => {

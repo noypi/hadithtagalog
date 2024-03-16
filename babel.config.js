@@ -20,6 +20,7 @@ module.exports = function (api) {
                     },
                 },
             ],
+            ['nativewind/babel'],
         ],
     };
 };

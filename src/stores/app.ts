@@ -1,8 +1,7 @@
 import { Appearance } from "react-native";
 import { action, computed, observable } from "mobx";
 import { greenTheme, greenDarkTheme } from '@data/theme';
-import { useEffect, useState } from "react";
-import { computed_property } from "@lib";
+import { computed_property } from "@lib/";
 
 class AppStore {
     @computed get theme() {
@@ -14,6 +13,10 @@ class AppStore {
     @computed get is_dark() {
         return Appearance.getColorScheme() == 'dark';
     };
+
+    @action set_menu(menu: string) {
+        this.menu = menu;
+    }
 
 }
 

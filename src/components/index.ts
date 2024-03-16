@@ -5,3 +5,4 @@ export * from './TagsModal';
 export * from './PopupDialog';
 export * from './HighlightText';
 export * from './TitledItem';
+export * from './TagsScene'

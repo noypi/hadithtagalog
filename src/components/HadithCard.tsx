@@ -27,48 +27,50 @@ const HighlightComponent = ({ children }) => {
 }
 
 export const HadithCard = ({ id, isFavorite, title, subtitle, content, cardTitle, highlights, onAddFavorite, onRemoveFavorite, onTagHadith }) => {
-    const $C = () => (<Card style={[rating < 0 ? styles.daifStyle : {}]}>
-        <Card.Title title={title} subtitle={subtitle} left={(LeftContent)} />
-        <Card.Content>
-            <Title>{cardTitle}</Title>
-            <Paragraph>
-                <HighlightText
-                    textComponent={TextComponent}
-                    highlightComponent={HighlightComponent}
-                    highlightStyle={styles.highlighted}
-                    searchWords={highlights}
-                    textToHighlight={content}
-                />
-            </Paragraph>
-            <View style={{ marginTop: 10 }}>
-                {grades.map((g, i) => (
-                    <Text key={i}>- {g.grade} {g.name.length > 0 ? `(${g.name})` : ''}</Text>
-                ))
-                }
-            </View>
-        </Card.Content>
-        <Card.Actions>
-            {/*<IconButton icon="page-next-outline"
+    const $C = () => (
+        <Card elevation={2} className="my-2 mx-2" style={[rating < 0 ? styles.daifStyle : {}]}>
+            <Card.Title title={title} subtitle={subtitle} left={(LeftContent)} />
+            <Card.Content>
+                <Title>{cardTitle}</Title>
+                <Paragraph>
+                    <HighlightText
+                        textComponent={TextComponent}
+                        highlightComponent={HighlightComponent}
+                        highlightStyle={styles.highlighted}
+                        searchWords={highlights}
+                        textToHighlight={content}
+                    />
+                </Paragraph>
+                <View style={{ marginTop: 10 }}>
+                    {grades.map((g, i) => (
+                        <Text key={i}>- {g.grade} {g.name.length > 0 ? `(${g.name})` : ''}</Text>
+                    ))
+                    }
+                </View>
+            </Card.Content>
+            <Card.Actions>
+                {/*<IconButton icon="page-next-outline"
                 iconColor={$colors.primary}
                 containerColor={$colors.surface}
             onPress={() => navigation.getParent('MainStackNavigator').navigate('ReadMore', { id, content, title: cardTitle, bookref: subtitle, isFavorite })} />*/}
 
-            <IconButton icon="content-copy"
-                iconColor={$colors.primary}
-                containerColor={$colors.surface}
-                onPress={async () => {
-                    await Clipboard.setStringAsync(`${cardTitle}:\n${content}\n\n${subtitle}`);
-                    ToastAndroid.show($tk.TOAST_COPIED, ToastAndroid.SHORT);
-                }} />
+                <IconButton icon="content-copy"
+                    iconColor={$colors.primary}
+                    containerColor={$colors.surface}
+                    onPress={async () => {
+                        await Clipboard.setStringAsync(`${cardTitle}:\n${content}\n\n${subtitle}`);
+                        ToastAndroid.show($tk.TOAST_COPIED, ToastAndroid.SHORT);
+                    }} />
 
-            <IconButton icon="playlist-plus" iconColor={$colors.primary} containerColor={$colors.surface} onPress={() => onTagHadith(id)} />
+                <IconButton icon="playlist-plus" iconColor={$colors.primary} containerColor={$colors.surface} onPress={() => onTagHadith(id)} />
 
-            {isFavorite ?
-                (<IconButton icon="star-minus" iconColor="gold" mode="flat" onPress={() => onRemoveFavorite(id)} />) :
-                (<Chip icon="star-plus-outline" onPress={() => onAddFavorite(id)} mode="flat" elevation={2}>{$tk.SEGBUTTONS_FAVORITES}</Chip>)
-            }
-        </Card.Actions>
-    </Card>)
+                {isFavorite ?
+                    (<IconButton icon="star-minus" iconColor="gold" mode="flat" onPress={() => onRemoveFavorite(id)} />) :
+                    (<Chip icon="star-plus-outline" onPress={() => onAddFavorite(id)} mode="flat" elevation={2}>{$tk.SEGBUTTONS_FAVORITES}</Chip>)
+                }
+            </Card.Actions>
+        </Card>
+    );
 
     const { $colors } = useAppStore();
     const styles = watch($colors, v => makeStyles($colors));

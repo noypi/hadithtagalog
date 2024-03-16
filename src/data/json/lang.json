@@ -41,7 +41,7 @@
     SEARCH_TAGS_RESULT_MESSAGE: {
         "ara": "From Cabinet",
         "eng": "From Cabinet",
-        "fil": "Galing sa Kabinet"
+        "fil": "Galing sa Aparador"
     },
     SEARCH_TAGS_ZERO_RESULT_MESSAGE: {
         "ara": "No Tagged Hadith found",
@@ -71,12 +71,12 @@
     TAG_MODAL_TITLE: {
         "ara": "Add to Cabinet",
         "eng": "Add to Cabinet",
-        "fil": "Ilagay sa Kabinet"
+        "fil": "Ilagay sa Aparador"
     },
     TAG_SEARCH_MODAL_TITLE: {
         "ara": "Search from Cabinet",
         "eng": "Search from Cabinet",
-        "fil": "Maghanap galing sa Kabinet"
+        "fil": "Maghanap galing sa Aparador"
     },
     CATEGORIES: {
         "ara": "Categories",
@@ -111,7 +111,7 @@
     SEGBUTTONS_TAGS: {
         "ara": "Cabinet",
         "eng": "Cabinet",
-        "fil": "Kabinet"
+        "fil": "Aparador"
     },
     MENU_FIL: {
         "ara": "tagalog",
@@ -141,12 +141,12 @@
     TAG_INPUT_NEW_LABEL: {
         "ara": "Name of new Cabinet",
         "eng": "Name of new Cabinet",
-        "fil": "Pangalan ng Bagong Kabinet"
+        "fil": "Gumawa ng bagong aparador"
     },
     TAG_INPUT_NEW_PLACEHOLDER: {
         "ara": "Create new Cabinet",
         "eng": "Create new Cabinet",
-        "fil": "Gumawa ng bagong Kabinet"
+        "fil": "Gumawa ng bagong aparador"
     },
     LANG: {
         "ara": "English",

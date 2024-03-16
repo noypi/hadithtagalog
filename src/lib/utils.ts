@@ -1,4 +1,6 @@
+
 import React, { useMemo, useState } from "react";
+import _ from 'lodash';
 
 export function split_hadith_id(hadith_id) {
     let ss = hadith_id.split(":");
@@ -19,7 +21,7 @@ export function computed_property<T>(watch_source) {
 
 export function watch<T>(watch_source: unknown, cb: (val) => T) {
     let memoized;
-    memoized = useMemo(() => cb(watch_source), [watch_source]);
+    memoized = useMemo(() => cb(watch_source), _.castArray(watch_source));
     return memoized;
 }
 
