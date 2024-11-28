@@ -1,6 +1,0 @@
-### 1.1.4 (2023-18-01)
-
-Fixes issues
-- #14 ReadMoreScreen - Clipped Text
-- #15 Main Menu - Unresponsive RadioButton 
-- #16 Search - Favorites and Tags Button must uncheck after search 

@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "rootDir": "./",
+        "baseUrl": ".",
+        // fix import "* as"
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "paths": {
+            "@lib*": [
+                "./src/lib*"
+            ],
+            "@screens*": [
+                "./src/screens*"
+            ],
+            "@data*": [
+                "./src/data*"
+            ],
+            "@stores*": [
+                "./src/stores*"
+            ],
+            "@config*": [
+                "./src/config*"
+            ],
+        }
+    },
+    "extends": "expo/tsconfig.base",
+    "include": [
+        "**/*.ts",
+        "**/*.tsx",
+        "src/config/index.js"
+    ]
+}

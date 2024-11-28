@@ -1,9 +1,0 @@
---- ../node_modules/react-native-sqlite-storage/platforms/android-native/build.gradle	2023-01-16 22:34:22.657999000 +0800
-+++ build.gradle	2023-01-17 06:15:49.995830338 +0800
-@@ -44,5 +44,5 @@
- 
- dependencies {
-     implementation 'com.facebook.react:react-native:+'
--    implementation files('libs/sqlite-connector.jar')
-+    //implementation files('libs/sqlite-connector.jar')
- }

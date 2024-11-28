@@ -1,0 +1,32 @@
+{
+    "expo": {
+        "name": "Tagalog Hadiths - Sahih Bukhari",
+        "slug": "hadiths2",
+        "version": "1.0.4",
+        "orientation": "portrait",
+        "icon": "./assets/ic_launcher.png",
+        "userInterfaceStyle": "light",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "org.migraso.hadiths2"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#ffffff"
+            },
+            "package": "org.migraso.hadiths2"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        }
+    }
+}
