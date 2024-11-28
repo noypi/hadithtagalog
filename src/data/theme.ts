@@ -1,7 +1,7 @@
-import {MD3LightTheme, MD3DarkTheme} from 'react-native-paper';
+import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
 const common = {
-    animation: {scale:1.0},
+    animation: { scale: 1.0 },
 }
 
 export const greenTheme = {
@@ -38,23 +38,23 @@ export const greenTheme = {
         "inverseOnSurface": "rgb(240, 241, 236)",
         "inversePrimary": "rgb(123, 218, 156)",
         "elevation": {
-          "level0": "transparent",
-          "level1": "rgb(238, 246, 239)",
-          "level2": "rgb(231, 242, 233)",
-          "level3": "rgb(223, 237, 227)",
-          "level4": "rgb(221, 236, 226)",
-          "level5": "rgb(216, 233, 222)"
+            "level0": "transparent",
+            "level1": "rgb(238, 246, 239)",
+            "level2": "rgb(231, 242, 233)",
+            "level3": "rgb(223, 237, 227)",
+            "level4": "rgb(221, 236, 226)",
+            "level5": "rgb(216, 233, 222)"
         },
         "surfaceDisabled": "rgba(25, 28, 26, 0.12)",
         "onSurfaceDisabled": "rgba(25, 28, 26, 0.38)",
         "backdrop": "rgba(43, 50, 44, 0.4)"
-      }
-  };
+    }
+};
 
 export const greenDarkTheme = {
     ...common,
     ...MD3DarkTheme,
-    animation: {scale:1.0},
+    animation: { scale: 1.0 },
     "colors": {
         "primary": "rgb(114, 222, 94)",
         "onPrimary": "rgb(0, 58, 0)",
@@ -86,15 +86,15 @@ export const greenDarkTheme = {
         "inverseOnSurface": "rgb(47, 49, 45)",
         "inversePrimary": "rgb(0, 110, 0)",
         "elevation": {
-          "level0": "transparent",
-          "level1": "rgb(30, 38, 28)",
-          "level2": "rgb(33, 44, 30)",
-          "level3": "rgb(36, 49, 32)",
-          "level4": "rgb(37, 51, 32)",
-          "level5": "rgb(38, 55, 34)"
+            "level0": "transparent",
+            "level1": "rgb(30, 38, 28)",
+            "level2": "rgb(33, 44, 30)",
+            "level3": "rgb(36, 49, 32)",
+            "level4": "rgb(37, 51, 32)",
+            "level5": "rgb(38, 55, 34)"
         },
         "surfaceDisabled": "rgba(226, 227, 220, 0.12)",
         "onSurfaceDisabled": "rgba(226, 227, 220, 0.38)",
         "backdrop": "rgba(44, 50, 41, 0.4)"
-      }  
+    }
 }

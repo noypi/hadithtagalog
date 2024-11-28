@@ -1,0 +1,201 @@
+diff --git a/node_modules/knex/lib/dialects/index.js b/node_modules/knex/lib/dialects/index.js
+index 559a366..959d0dd 100644
+--- a/node_modules/knex/lib/dialects/index.js
++++ b/node_modules/knex/lib/dialects/index.js
+@@ -3,17 +3,17 @@ Object.defineProperty(exports, '__esModule', { value: true });
+ exports.getDialectByNameOrAlias = void 0;
+ const { resolveClientNameWithAliases } = require('../util/helpers');
+ const dbNameToDialectLoader = Object.freeze({
+-  'better-sqlite3': () => require('./better-sqlite3'),
+-  cockroachdb: () => require('./cockroachdb'),
+-  mssql: () => require('./mssql'),
+-  mysql: () => require('./mysql'),
+-  mysql2: () => require('./mysql2'),
+-  oracle: () => require('./oracle'),
+-  oracledb: () => require('./oracledb'),
+-  pgnative: () => require('./pgnative'),
+-  postgres: () => require('./postgres'),
+-  redshift: () => require('./redshift'),
+-  sqlite3: () => require('./sqlite3'),
++    'better-sqlite3': () => require('./better-sqlite3'),
++    //   cockroachdb: () => require('./cockroachdb'),
++    //   mssql: () => require('./mssql'),
++    //   mysql: () => require('./mysql'),
++    //   mysql2: () => require('./mysql2'),
++    //   oracle: () => require('./oracle'),
++    //   oracledb: () => require('./oracledb'),
++    //   pgnative: () => require('./pgnative'),
++    //   postgres: () => require('./postgres'),
++    //   redshift: () => require('./redshift'),
++    sqlite3: () => require('./sqlite3'),
+ });
+ /**
+  * Gets the Dialect object with the given client name or throw an
+@@ -23,12 +23,12 @@ const dbNameToDialectLoader = Object.freeze({
+  * string construction for imports of Dialect objects.
+  */
+ function getDialectByNameOrAlias(clientName) {
+-  const resolvedClientName = resolveClientNameWithAliases(clientName);
+-  const dialectLoader = dbNameToDialectLoader[resolvedClientName];
+-  if (!dialectLoader) {
+-    throw new Error(`Invalid clientName given: ${clientName}`);
+-  }
+-  return dialectLoader();
++    const resolvedClientName = resolveClientNameWithAliases(clientName);
++    const dialectLoader = dbNameToDialectLoader[resolvedClientName];
++    if (!dialectLoader) {
++        throw new Error(`Invalid clientName given: ${clientName}`);
++    }
++    return dialectLoader();
+ }
+ exports.getDialectByNameOrAlias = getDialectByNameOrAlias;
+ //# sourceMappingURL=index.js.map
+diff --git a/node_modules/knex/lib/knex-builder/internal/parse-connection.js b/node_modules/knex/lib/knex-builder/internal/parse-connection.js
+index 7267127..aef910c 100644
+--- a/node_modules/knex/lib/knex-builder/internal/parse-connection.js
++++ b/node_modules/knex/lib/knex-builder/internal/parse-connection.js
+@@ -1,5 +1,3 @@
+-const { parse } = require('pg-connection-string');
+-const parsePG = parse;
+ const isWindows = process && process.platform && process.platform === 'win32';
+ 
+ /**
+@@ -7,35 +5,32 @@ const isWindows = process && process.platform && process.platform === 'win32';
+  * @returns {URL}
+  */
+ function tryParse(str) {
+-  try {
+-    return new URL(str);
+-  } catch (e) {
+-    return null;
+-  }
++    try {
++        return new URL(str);
++    } catch (e) {
++        return null;
++    }
+ }
+ 
+ module.exports = function parseConnectionString(str) {
+-  const parsed = tryParse(str);
+-  const isDriveLetter = isWindows && parsed && parsed.protocol.length === 2;
+-  if (!parsed || isDriveLetter) {
++    const parsed = tryParse(str);
++    const isDriveLetter = isWindows && parsed && parsed.protocol.length === 2;
++    if (!parsed || isDriveLetter) {
++        return {
++            client: 'sqlite3',
++            connection: {
++                filename: str,
++            },
++        };
++    }
++    let { protocol } = parsed;
++    if (protocol.slice(-1) === ':') {
++        protocol = protocol.slice(0, -1);
++    }
+     return {
+-      client: 'sqlite3',
+-      connection: {
+-        filename: str,
+-      },
++        client: protocol,
++        connection: connectionObject(parsed),
+     };
+-  }
+-  let { protocol } = parsed;
+-  if (protocol.slice(-1) === ':') {
+-    protocol = protocol.slice(0, -1);
+-  }
+-
+-  const isPG = ['postgresql', 'postgres'].includes(protocol);
+-
+-  return {
+-    client: protocol,
+-    connection: isPG ? parsePG(str) : connectionObject(parsed),
+-  };
+ };
+ 
+ /**
+@@ -43,45 +38,45 @@ module.exports = function parseConnectionString(str) {
+  * @returns {{}}
+  */
+ function connectionObject(parsed) {
+-  const connection = {};
+-  let db = parsed.pathname;
+-  if (db[0] === '/') {
+-    db = db.slice(1);
+-  }
++    const connection = {};
++    let db = parsed.pathname;
++    if (db[0] === '/') {
++        db = db.slice(1);
++    }
+ 
+-  connection.database = db;
++    connection.database = db;
+ 
+-  if (parsed.hostname) {
+-    if (parsed.protocol.indexOf('mssql') === 0) {
+-      connection.server = parsed.hostname;
+-    } else {
+-      connection.host = parsed.hostname;
++    if (parsed.hostname) {
++        if (parsed.protocol.indexOf('mssql') === 0) {
++            connection.server = parsed.hostname;
++        } else {
++            connection.host = parsed.hostname;
++        }
++    }
++    if (parsed.port) {
++        connection.port = parsed.port;
++    }
++    if (parsed.username || parsed.password) {
++        connection.user = decodeURIComponent(parsed.username);
++    }
++    if (parsed.password) {
++        connection.password = decodeURIComponent(parsed.password);
+     }
+-  }
+-  if (parsed.port) {
+-    connection.port = parsed.port;
+-  }
+-  if (parsed.username || parsed.password) {
+-    connection.user = decodeURIComponent(parsed.username);
+-  }
+-  if (parsed.password) {
+-    connection.password = decodeURIComponent(parsed.password);
+-  }
+-  if (parsed.searchParams) {
+-    for (const [key, value] of parsed.searchParams.entries()) {
+-      const isNestedConfigSupported = ['mysql:', 'mariadb:', 'mssql:'].includes(
+-        parsed.protocol
+-      );
+-      if (isNestedConfigSupported) {
+-        try {
+-          connection[key] = JSON.parse(value);
+-        } catch (err) {
+-          connection[key] = value;
++    if (parsed.searchParams) {
++        for (const [key, value] of parsed.searchParams.entries()) {
++            const isNestedConfigSupported = ['mysql:', 'mariadb:', 'mssql:'].includes(
++                parsed.protocol
++            );
++            if (isNestedConfigSupported) {
++                try {
++                    connection[key] = JSON.parse(value);
++                } catch (err) {
++                    connection[key] = value;
++                }
++            } else {
++                connection[key] = value;
++            }
+         }
+-      } else {
+-        connection[key] = value;
+-      }
+     }
+-  }
+-  return connection;
++    return connection;
+ }
